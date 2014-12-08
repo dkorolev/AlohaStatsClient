@@ -1,3 +1,4 @@
+// TODO replace with #ifdef when final file name/location will be decided
 #pragma once
 
 /*******************************************************************************
@@ -26,11 +27,10 @@ SOFTWARE.
 
 #include <string>
 
+
 namespace aloha {
 
-
 class HttpClient {
-
 public:
   enum {
     kNotInitialized = -1,
@@ -38,13 +38,13 @@ public:
 
 private:
   std::string url_requested_;
-  // Can be different if original request was redirected
+  // Contains final content's url taking redirects (if any) into an account.
   std::string url_received_;
   int error_code_;
   std::string post_file_;
-  // If set, server_reply_ will not be used
+  // Used instead of server_reply_ if set.
   std::string received_file_;
-  // Data we received from server if output_file_ wasn't initialized
+  // Data we received from the server if output_file_ wasn't initialized.
   std::string server_response_;
   std::string content_type_;
   std::string user_agent_;
@@ -55,32 +55,33 @@ private:
   HttpClient& operator=(const HttpClient&) = delete;
 
 public:
-
   HttpClient(const std::string & url) : url_requested_(url), error_code_(kNotInitialized) {
   }
-  // Mutually exclusive with set_post_body()
+  // This method is mutually exclusive with set_post_body().
   HttpClient & set_post_file(const std::string & post_file, const std::string & content_type) {
     post_file_ = post_file;
-    post_body_.clear();
     content_type_ = content_type;
+    // TODO replace with exceptions as discussed offline.
+    assert(post_body_.empty());
     return *this;
   }
-  // If set, stores server reply in given file
+  // If set, stores server reply in file specified.
   HttpClient & set_received_file(const std::string & received_file) {
     received_file_ = received_file; return *this;
   }
   HttpClient & set_user_agent(const std::string & user_agent) {
     user_agent_ = user_agent; return *this;
   }
-  // Mutually exclusive with set_post_file()
+  // This method is mutually exclusive with set_post_file().
   HttpClient & set_post_body(const std::string & post_body, const std::string & content_type) {
     post_body_ = post_body;
-    post_file_.clear();
     content_type_ = content_type;
+    // TODO replace with exceptions as discussed offline.
+    assert(post_file_.empty());
     return *this;
   }
-  // Move version to avoid string copying
-  // Mutually exclusive with set_post_file()
+  // Move version to avoid string copying.
+  // This method is mutually exclusive with set_post_file().
   HttpClient & set_post_body(std::string && post_body, const std::string & content_type) {
     post_body_ = post_body;
     post_file_.clear();
@@ -113,7 +114,6 @@ public:
   }
 
 }; // class HttpClient
-
 
 }  // namespace aloha
 

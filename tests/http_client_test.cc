@@ -19,11 +19,17 @@ using aloha::HttpClient;
 using bricks::MakeScopeGuard;
 using bricks::ReadFileAsString;
 
+void WriteStringToFile(string file_name, string string_to_write)
+{
+  ofstream file(file_name);
+  file << string_to_write;
+  ASSERT_TRUE(file.good());
+}
 
 TEST(HttpClient, GetIntoMemory) {
   const string url = "http://httpbin.org/drip?numbytes=7";
   HttpClient client(url);
-  ASSERT_TRUE(client.Connect()) << "Can't connect to server " << client.url_requested();
+  ASSERT_TRUE(client.Connect());
   EXPECT_EQ(200, client.error_code());
   EXPECT_EQ("*******", client.server_response());
   EXPECT_EQ(url, client.url_received());
@@ -31,18 +37,13 @@ TEST(HttpClient, GetIntoMemory) {
 }
 
 TEST(HttpClient, GetIntoFile) {
-  const string file_name = "some_test_file_for_http_get";
-  const auto file_deleter = MakeScopeGuard([&] { ::remove(file_name.c_str()); });
-  const string url = "http://httpbin.org/drip?numbytes=5";
-  HttpClient client(url);
+  const char * file_name = "some_test_file_for_http_get";
+  const auto file_deleter = MakeScopeGuard([&] { ::remove(file_name); });
+  HttpClient client("http://httpbin.org/drip?numbytes=5");
   client.set_received_file(file_name);
-  ASSERT_TRUE(client.Connect()) << "Can't connect to server " << client.url_requested();
-  EXPECT_EQ(200, client.error_code());
+  ASSERT_TRUE(client.Connect());
   EXPECT_TRUE(client.server_response().empty());
-  {
-    const string received_data = ReadFileAsString(file_name);
-    EXPECT_EQ("*****", received_data);
-  }
+  EXPECT_EQ("*****", ReadFileAsString(file_name));
 }
 
 TEST(HttpClient, PostFromMemoryIntoMemory) {
@@ -51,8 +52,7 @@ TEST(HttpClient, PostFromMemoryIntoMemory) {
   const string url = "http://httpbin.org/post";
   HttpClient client(url);
   client.set_post_body(post_body, "application/octet-stream");
-  ASSERT_TRUE(client.Connect()) << "Can't connect to server " << client.url_requested();
-  EXPECT_EQ(200, client.error_code());
+  ASSERT_TRUE(client.Connect());
   EXPECT_NE(string::npos, client.server_response().find("\"data\": \"\\u0000\\u0001\\u0002\\u0003\\u0004\\u0005\\u0006\\u0007\\u0000\""))
       << client.server_response();
 }
@@ -69,16 +69,11 @@ TEST(HttpClient, PostFromFileIntoMemory) {
   // Use it as a file name and as a test contents string
   const string file_name = "some_input_test_file_for_http_post";
   const auto file_deleter = MakeScopeGuard([&] { ::remove(file_name.c_str()); });
-  {
-    ofstream file(file_name);
-    file << file_name;
-    ASSERT_TRUE(file.good());
-  }
+  WriteStringToFile(file_name, file_name);
   const string url = "http://httpbin.org/post";
   HttpClient client(url);
   client.set_post_file(file_name, "text/plain");
-  ASSERT_TRUE(client.Connect()) << "Can't connect to server " << client.url_requested();
-  EXPECT_EQ(200, client.error_code());
+  ASSERT_TRUE(client.Connect());
   EXPECT_NE(string::npos, client.server_response().find(file_name));
 }
 
@@ -86,17 +81,12 @@ TEST(HttpClient, PostFromMemoryIntoFile) {
   // Use it as a file name and as a test contents string
   const string file_name = "some_output_test_file_for_http_post";
   const auto file_deleter = MakeScopeGuard([&] { ::remove(file_name.c_str()); });
-  const string url = "http://httpbin.org/post";
-  HttpClient client(url);
+  HttpClient client("http://httpbin.org/post");
   client.set_received_file(file_name)
         .set_post_body(file_name, "text/plain");
-  ASSERT_TRUE(client.Connect()) << "Can't connect to server " << client.url_requested();
-  EXPECT_EQ(200, client.error_code());
+  ASSERT_TRUE(client.Connect());
   EXPECT_TRUE(client.server_response().empty());
-  {
-    const string received_data = ReadFileAsString(file_name);
-    EXPECT_NE(string::npos, received_data.find(file_name));
-  }
+  EXPECT_NE(string::npos, ReadFileAsString(file_name).find(file_name));
 }
 
 TEST(HttpClient, PostFromFileIntoFile) {
@@ -104,40 +94,27 @@ TEST(HttpClient, PostFromFileIntoFile) {
   const string output_file_name = "some_complex_output_test_file_for_http_post";
   const auto file_deleter = MakeScopeGuard([&] { ::remove(input_file_name.c_str()); ::remove(output_file_name.c_str()); });
   const string post_body = "Aloha, this text should pass from one file to another. Mahalo!";
-  {
-    ofstream file(input_file_name);
-    file << post_body;
-    ASSERT_TRUE(file.good());
-  }
-  const string url = "http://httpbin.org/post";
-  HttpClient client(url);
+  WriteStringToFile(input_file_name, post_body);
+  HttpClient client("http://httpbin.org/post");
   client.set_post_file(input_file_name, "text/plain")
         .set_received_file(output_file_name);
-  ASSERT_TRUE(client.Connect()) << "Can't connect to server " << client.url_requested();
-  EXPECT_EQ(200, client.error_code());
+  ASSERT_TRUE(client.Connect());
   EXPECT_TRUE(client.server_response().empty());
   {
     const string received_data = ReadFileAsString(output_file_name);
-    EXPECT_NE(string::npos, received_data.find(post_body)) << received_data << endl << post_body << endl;
+    EXPECT_NE(string::npos, received_data.find(post_body)) << received_data << endl << post_body;
   }
 }
 
 TEST(HttpClient, ErrorCodes) {
-  {
-    HttpClient client("http://httpbin.org/status/403");
-    ASSERT_FALSE(client.Connect()) << "Can't connect to server " << client.url_requested();
-    EXPECT_EQ(403, client.error_code());
-  }
-  {
-    HttpClient client("http://httpbin.org/status/206");
-    ASSERT_FALSE(client.Connect()) << "Can't connect to server " << client.url_requested();
-    EXPECT_EQ(206, client.error_code());
-  }
+  HttpClient client("http://httpbin.org/status/403");
+  ASSERT_FALSE(client.Connect());
+  EXPECT_EQ(403, client.error_code());
 }
 
 TEST(HttpClient, Https) {
   HttpClient client("https://httpbin.org/get?Aloha=Mahalo");
-  ASSERT_TRUE(client.Connect()) << "Can't connect to server " << client.url_requested();
+  ASSERT_TRUE(client.Connect());
   EXPECT_EQ(200, client.error_code());
   EXPECT_FALSE(client.was_redirected());
   EXPECT_NE(string::npos, client.server_response().find("\"Aloha\": \"Mahalo\""));
@@ -145,8 +122,7 @@ TEST(HttpClient, Https) {
 
 TEST(HttpClient, HttpRedirect301) {
   HttpClient client("http://github.com");
-  ASSERT_TRUE(client.Connect()) << "Can't connect to server " << client.url_requested();
-  EXPECT_EQ(200, client.error_code());
+  ASSERT_TRUE(client.Connect());
   EXPECT_NE(client.url_requested(), client.url_received());
   EXPECT_EQ("https://github.com/", client.url_received());
   EXPECT_TRUE(client.was_redirected());
@@ -154,16 +130,14 @@ TEST(HttpClient, HttpRedirect301) {
 
 TEST(HttpClient, HttpRedirect302) {
   HttpClient client("http://httpbin.org/redirect/2");
-  ASSERT_TRUE(client.Connect()) << "Can't connect to server " << client.url_requested();
-  EXPECT_EQ(200, client.error_code());
+  ASSERT_TRUE(client.Connect());
   EXPECT_EQ("http://httpbin.org/get", client.url_received());
   EXPECT_TRUE(client.was_redirected());
 }
 
 TEST(HttpClient, HttpRedirect307) {
   HttpClient client("http://msn.com");
-  ASSERT_TRUE(client.Connect()) << "Can't connect to server " << client.url_requested();
-  EXPECT_EQ(200, client.error_code());
+  ASSERT_TRUE(client.Connect());
   EXPECT_EQ("http://www.msn.com/", client.url_received());
   EXPECT_TRUE(client.was_redirected());
 }
@@ -178,8 +152,6 @@ TEST(HttpClient, UserAgent) {
   HttpClient client("http://httpbin.org/user-agent");
   const string custom_user_agent = "Aloha User Agent";
   client.set_user_agent(custom_user_agent);
-  ASSERT_TRUE(client.Connect()) << "Can't connect to server " << client.url_requested();
-  EXPECT_EQ(200, client.error_code());
+  ASSERT_TRUE(client.Connect());
   EXPECT_NE(string::npos, client.server_response().find(custom_user_agent));
 }
-

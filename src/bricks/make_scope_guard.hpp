@@ -1,3 +1,4 @@
+// TODO replace with #ifdef when final file name/location will be decided
 #pragma once
 
 /*******************************************************************************
@@ -33,8 +34,12 @@ template<typename POINTER, typename DELETER> std::unique_ptr<POINTER, DELETER> M
 }
 
 template<typename F>
-class ScopeGuard {
+class ScopeGuard final {
   F f_;
+  ScopeGuard(const ScopeGuard&) = delete;
+  ScopeGuard & operator=(const ScopeGuard&) = delete;
+  ScopeGuard(ScopeGuard&&) = delete;
+  ScopeGuard & operator=(ScopeGuard&&) = delete;
 public:
   ScopeGuard(F f) : f_(f){
   }

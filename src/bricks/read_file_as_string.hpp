@@ -1,3 +1,4 @@
+// TODO replace with #ifdef when final file name/location will be decided
 #pragma once
 
 /*******************************************************************************
@@ -29,9 +30,8 @@ SOFTWARE.
 
 namespace bricks {
 
-std::string ReadFileAsString(std::string const & file) {
-
-  std::ifstream fstream(file, std::ifstream::in | std::ifstream::binary);
+std::string ReadFileAsString(std::string const & file_name) {
+  std::ifstream fstream(file_name, std::ifstream::in | std::ifstream::binary);
   fstream.seekg(0, std::ios::end);
   const size_t size = fstream.tellg();
   std::string buffer(size, '\0');
