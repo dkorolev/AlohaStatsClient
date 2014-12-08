@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace bricks {
 
-std::string ReadFileAsString(std::string const & file_name) {
+std::string ReadFileAsString(std::string const& file_name) {
   std::ifstream fstream(file_name, std::ifstream::in | std::ifstream::binary);
   fstream.seekg(0, std::ios::end);
   const size_t size = fstream.tellg();
@@ -42,4 +42,4 @@ std::string ReadFileAsString(std::string const & file_name) {
     return std::string();
 }
 
-} // namespace bricks
+}  // namespace bricks

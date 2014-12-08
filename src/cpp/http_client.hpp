@@ -27,16 +27,15 @@ SOFTWARE.
 
 #include <string>
 
-
 namespace aloha {
 
 class HttpClient {
-public:
+ public:
   enum {
     kNotInitialized = -1,
   };
 
-private:
+ private:
   std::string url_requested_;
   // Contains final content's url taking redirects (if any) into an account.
   std::string url_received_;
@@ -54,11 +53,11 @@ private:
   HttpClient(HttpClient&&) = delete;
   HttpClient& operator=(const HttpClient&) = delete;
 
-public:
-  HttpClient(const std::string & url) : url_requested_(url), error_code_(kNotInitialized) {
+ public:
+  HttpClient(const std::string& url) : url_requested_(url), error_code_(kNotInitialized) {
   }
   // This method is mutually exclusive with set_post_body().
-  HttpClient & set_post_file(const std::string & post_file, const std::string & content_type) {
+  HttpClient& set_post_file(const std::string& post_file, const std::string& content_type) {
     post_file_ = post_file;
     content_type_ = content_type;
     // TODO replace with exceptions as discussed offline.
@@ -66,14 +65,16 @@ public:
     return *this;
   }
   // If set, stores server reply in file specified.
-  HttpClient & set_received_file(const std::string & received_file) {
-    received_file_ = received_file; return *this;
+  HttpClient& set_received_file(const std::string& received_file) {
+    received_file_ = received_file;
+    return *this;
   }
-  HttpClient & set_user_agent(const std::string & user_agent) {
-    user_agent_ = user_agent; return *this;
+  HttpClient& set_user_agent(const std::string& user_agent) {
+    user_agent_ = user_agent;
+    return *this;
   }
   // This method is mutually exclusive with set_post_file().
-  HttpClient & set_post_body(const std::string & post_body, const std::string & content_type) {
+  HttpClient& set_post_body(const std::string& post_body, const std::string& content_type) {
     post_body_ = post_body;
     content_type_ = content_type;
     // TODO replace with exceptions as discussed offline.
@@ -82,7 +83,7 @@ public:
   }
   // Move version to avoid string copying.
   // This method is mutually exclusive with set_post_file().
-  HttpClient & set_post_body(std::string && post_body, const std::string & content_type) {
+  HttpClient& set_post_body(std::string&& post_body, const std::string& content_type) {
     post_body_ = post_body;
     post_file_.clear();
     content_type_ = content_type;
@@ -94,11 +95,11 @@ public:
   // @note Implementations should transparently support all needed HTTP redirects
   bool Connect();
 
-  std::string const & url_requested() const {
+  std::string const& url_requested() const {
     return url_requested_;
   }
   // @returns empty string in the case of error
-  std::string const & url_received() const {
+  std::string const& url_received() const {
     return url_received_;
   }
   bool was_redirected() const {
@@ -109,11 +110,11 @@ public:
   int error_code() const {
     return error_code_;
   }
-  std::string const & server_response() const {
+  std::string const& server_response() const {
     return server_response_;
   }
 
-}; // class HttpClient
+};  // class HttpClient
 
 }  // namespace aloha
 

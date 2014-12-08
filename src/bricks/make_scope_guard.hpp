@@ -29,27 +29,30 @@ SOFTWARE.
 
 namespace bricks {
 
-template<typename POINTER, typename DELETER> std::unique_ptr<POINTER, DELETER> MakePointerScopeGuard(POINTER * x, DELETER t) {
+template <typename POINTER, typename DELETER>
+std::unique_ptr<POINTER, DELETER> MakePointerScopeGuard(POINTER* x, DELETER t) {
   return std::unique_ptr<POINTER, DELETER>(x, t);
 }
 
-template<typename F>
+template <typename F>
 class ScopeGuard final {
   F f_;
   ScopeGuard(const ScopeGuard&) = delete;
-  ScopeGuard & operator=(const ScopeGuard&) = delete;
+  ScopeGuard& operator=(const ScopeGuard&) = delete;
   ScopeGuard(ScopeGuard&&) = delete;
-  ScopeGuard & operator=(ScopeGuard&&) = delete;
-public:
-  ScopeGuard(F f) : f_(f){
+  ScopeGuard& operator=(ScopeGuard&&) = delete;
+
+ public:
+  ScopeGuard(F f) : f_(f) {
   }
   ~ScopeGuard() {
     f_();
   }
 };
 
-template<typename F> ScopeGuard<F> MakeScopeGuard(F f) {
+template <typename F>
+ScopeGuard<F> MakeScopeGuard(F f) {
   return ScopeGuard<F>(f);
 }
 
-} // namespace bricks
+}  // namespace bricks

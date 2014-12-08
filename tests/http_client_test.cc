@@ -9,7 +9,6 @@
 #include "../3party/gtest/gtest.h"
 #include "../3party/gtest/gtest-main.h"
 
-
 using std::string;
 using std::cout;
 using std::endl;
@@ -19,8 +18,7 @@ using aloha::HttpClient;
 using bricks::MakeScopeGuard;
 using bricks::ReadFileAsString;
 
-void WriteStringToFile(string file_name, string string_to_write)
-{
+void WriteStringToFile(string file_name, string string_to_write) {
   ofstream file(file_name);
   file << string_to_write;
   ASSERT_TRUE(file.good());
@@ -37,7 +35,7 @@ TEST(HttpClient, GetIntoMemory) {
 }
 
 TEST(HttpClient, GetIntoFile) {
-  const char * file_name = "some_test_file_for_http_get";
+  const char* file_name = "some_test_file_for_http_get";
   const auto file_deleter = MakeScopeGuard([&] { ::remove(file_name); });
   HttpClient client("http://httpbin.org/drip?numbytes=5");
   client.set_received_file(file_name);
@@ -47,13 +45,15 @@ TEST(HttpClient, GetIntoFile) {
 }
 
 TEST(HttpClient, PostFromMemoryIntoMemory) {
-  string const post_body("\0\1\2\3\4\5\6\7\0", 9); // Some binary data
+  string const post_body("\0\1\2\3\4\5\6\7\0", 9);  // Some binary data
   ASSERT_EQ(9, post_body.size());
   const string url = "http://httpbin.org/post";
   HttpClient client(url);
   client.set_post_body(post_body, "application/octet-stream");
   ASSERT_TRUE(client.Connect());
-  EXPECT_NE(string::npos, client.server_response().find("\"data\": \"\\u0000\\u0001\\u0002\\u0003\\u0004\\u0005\\u0006\\u0007\\u0000\""))
+  EXPECT_NE(string::npos,
+            client.server_response().find(
+                "\"data\": \"\\u0000\\u0001\\u0002\\u0003\\u0004\\u0005\\u0006\\u0007\\u0000\""))
       << client.server_response();
 }
 
@@ -82,8 +82,7 @@ TEST(HttpClient, PostFromMemoryIntoFile) {
   const string file_name = "some_output_test_file_for_http_post";
   const auto file_deleter = MakeScopeGuard([&] { ::remove(file_name.c_str()); });
   HttpClient client("http://httpbin.org/post");
-  client.set_received_file(file_name)
-        .set_post_body(file_name, "text/plain");
+  client.set_received_file(file_name).set_post_body(file_name, "text/plain");
   ASSERT_TRUE(client.Connect());
   EXPECT_TRUE(client.server_response().empty());
   EXPECT_NE(string::npos, ReadFileAsString(file_name).find(file_name));
@@ -92,12 +91,14 @@ TEST(HttpClient, PostFromMemoryIntoFile) {
 TEST(HttpClient, PostFromFileIntoFile) {
   const string input_file_name = "some_complex_input_test_file_for_http_post";
   const string output_file_name = "some_complex_output_test_file_for_http_post";
-  const auto file_deleter = MakeScopeGuard([&] { ::remove(input_file_name.c_str()); ::remove(output_file_name.c_str()); });
+  const auto file_deleter = MakeScopeGuard([&] {
+    ::remove(input_file_name.c_str());
+    ::remove(output_file_name.c_str());
+  });
   const string post_body = "Aloha, this text should pass from one file to another. Mahalo!";
   WriteStringToFile(input_file_name, post_body);
   HttpClient client("http://httpbin.org/post");
-  client.set_post_file(input_file_name, "text/plain")
-        .set_received_file(output_file_name);
+  client.set_post_file(input_file_name, "text/plain").set_received_file(output_file_name);
   ASSERT_TRUE(client.Connect());
   EXPECT_TRUE(client.server_response().empty());
   {
