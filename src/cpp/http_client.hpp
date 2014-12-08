@@ -26,6 +26,7 @@ SOFTWARE.
 *******************************************************************************/
 
 #include <string>
+#include <cassert>
 
 namespace aloha {
 
