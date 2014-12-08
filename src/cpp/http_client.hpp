@@ -1,4 +1,4 @@
-// TODO replace with #ifdef when final file name/location will be decided
+// TODO (dkorolev) replace with #ifdef when final file name/location will be decided
 #pragma once
 
 /*******************************************************************************
@@ -60,7 +60,7 @@ class HttpClient {
   HttpClient& set_post_file(const std::string& post_file, const std::string& content_type) {
     post_file_ = post_file;
     content_type_ = content_type;
-    // TODO replace with exceptions as discussed offline.
+    // TODO (dkorolev) replace with exceptions as discussed offline.
     assert(post_body_.empty());
     return *this;
   }
@@ -77,7 +77,7 @@ class HttpClient {
   HttpClient& set_post_body(const std::string& post_body, const std::string& content_type) {
     post_body_ = post_body;
     content_type_ = content_type;
-    // TODO replace with exceptions as discussed offline.
+    // TODO (dkorolev) replace with exceptions as discussed offline.
     assert(post_file_.empty());
     return *this;
   }

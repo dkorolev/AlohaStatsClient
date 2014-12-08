@@ -18,7 +18,7 @@ using aloha::HttpClient;
 using bricks::MakeScopeGuard;
 using bricks::ReadFileAsString;
 
-void WriteStringToFile(string file_name, string string_to_write) {
+static void WriteStringToFile(string file_name, string string_to_write) {
   ofstream file(file_name);
   file << string_to_write;
   ASSERT_TRUE(file.good());
@@ -66,7 +66,7 @@ TEST(HttpClient, PostFromInvalidFile) {
 }
 
 TEST(HttpClient, PostFromFileIntoMemory) {
-  // Use it as a file name and as a test contents string
+  // Use it as a file name and as a test contents string.
   const string file_name = "some_input_test_file_for_http_post";
   const auto file_deleter = MakeScopeGuard([&] { ::remove(file_name.c_str()); });
   WriteStringToFile(file_name, file_name);
@@ -78,7 +78,7 @@ TEST(HttpClient, PostFromFileIntoMemory) {
 }
 
 TEST(HttpClient, PostFromMemoryIntoFile) {
-  // Use it as a file name and as a test contents string
+  // Use it as a file name and as a test contents string.
   const string file_name = "some_output_test_file_for_http_post";
   const auto file_deleter = MakeScopeGuard([&] { ::remove(file_name.c_str()); });
   HttpClient client("http://httpbin.org/post");

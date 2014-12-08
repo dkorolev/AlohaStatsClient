@@ -1,4 +1,4 @@
-// TODO replace with #ifdef when final file name/location will be decided
+// TODO (dkorolev) replace with #ifdef when final file name/location will be decided
 #pragma once
 
 /*******************************************************************************
