@@ -26,6 +26,7 @@ SOFTWARE.
 *******************************************************************************/
 
 #include <memory>
+#include <utility>
 
 namespace bricks {
 
@@ -38,12 +39,12 @@ template <typename F>
 class ScopeGuard final {
   F f_;
   ScopeGuard(const ScopeGuard&) = delete;
-  ScopeGuard& operator=(const ScopeGuard&) = delete;
-  ScopeGuard(ScopeGuard&&) = delete;
-  ScopeGuard& operator=(ScopeGuard&&) = delete;
+  void operator=(const ScopeGuard&) = delete;
 
  public:
-  ScopeGuard(F f) : f_(f) {
+  explicit ScopeGuard(F f) : f_(f) {
+  }
+  ScopeGuard(ScopeGuard&& other) : f_(std::forward<F>(other.f_)) {
   }
   ~ScopeGuard() {
     f_();
