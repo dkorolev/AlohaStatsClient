@@ -21,7 +21,6 @@ android {
     }
     // Please set your statistics URL in gradle.properties file in your project
     buildConfigField 'String',  'STATISTICS_URL',      propertyStatisticsUrl
-    buildConfigField 'boolean', 'CHECK_IF_OUR_SERVER', propertyCheckIfOurServer
   }
 
   sourceSets.main {

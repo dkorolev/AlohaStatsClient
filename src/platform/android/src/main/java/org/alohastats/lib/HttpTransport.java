@@ -69,17 +69,7 @@ public class HttpTransport {
 
       final int httpCode = urlConnection.getResponseCode();
       //Log.d(TAG, "Server replied with http code " + httpCode);
-
-      if (httpCode == 200) {
-
-        if (!BuildConfig.CHECK_IF_OUR_SERVER)
-          return true;
-        // Check if we sent file to the correct server
-        final String reply = new String(fullReplyBody.buffer());
-        if (reply.equals(httpUrl))
-          return true;
-        //Log.d(TAG, "Wrong server has replied with [" + reply + "], please configure your web server to reply with BuildConfig.STATISTICS_URL");
-      }
+      return 200 == httpCode;
     }
     catch (MalformedURLException e) {
       Log.e(TAG, e.getMessage());
