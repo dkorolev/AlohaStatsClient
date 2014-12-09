@@ -1,3 +1,6 @@
+// TODO (dkorolev) add header guards when header's name and location become stable.
+#pragma once
+
 /*******************************************************************************
 The MIT License (MIT)
 
@@ -22,30 +25,37 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 *******************************************************************************/
 
-#ifndef ALOHA_STATS_HPP
-#define ALOHA_STATS_HPP
-
 #include <string>
-#include <memory>
+#include <thread>
+#include <iostream>
+
+#include "http_client.h"
 
 namespace aloha {
 
 class Stats {
-  Stats();
-
-  // Hide implementation to avoid possible platform-dependent includes in the header
-  class Impl;
-  std::unique_ptr<Impl> impl_;
+  std::string statistics_server_url_;
 
  public:
-  static Stats& Instance();
+  Stats(std::string const& statistics_server_url) : statistics_server_url_(statistics_server_url) {
+  }
 
-  bool LogEvent(std::string const& event_name) const;
-  bool LogEvent(std::string const& event_name, std::string const& event_value) const;
+  bool LogEvent(std::string const& event_name) const {
+    std::thread(&SimpleSampleHttpPost, statistics_server_url_, event_name).detach();
+  }
+
+  bool LogEvent(std::string const& event_name, std::string const& event_value) const {
+    std::thread(&SimpleSampleHttpPost, statistics_server_url_, event_name + "=" + event_value).detach();
+  }
+
+ private:
+  // TODO temporary stub function
+  static void SimpleSampleHttpPost(const std::string& url, const std::string& post_data) {
+    if (!HttpClient(url).set_post_body(post_data, "text/plain").Connect())
+      std::cerr << "Error while sending data to the server " << url << std::endl;
+  }
 };
 
 std::string HelloWorld();
 
 }  // namespace aloha
-
-#endif  // ALOHA_STATS_HPP

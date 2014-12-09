@@ -17,7 +17,7 @@ android {
     ndk {
       moduleName "alohastats"
       stl "c++_static"
-      ldLibs "log"
+      ldLibs "log" , "atomic"
     }
     // Please set your statistics URL in gradle.properties file in your project
     buildConfigField 'String',  'STATISTICS_URL',      propertyStatisticsUrl
@@ -25,6 +25,6 @@ android {
   }
 
   sourceSets.main {
-    jni.srcDirs = [ 'src/main/jni', '../../cpp' ]
+    jni.srcDirs = [ 'src/main/jni', '../../cpp', '../../bricks' ]
   }
 }

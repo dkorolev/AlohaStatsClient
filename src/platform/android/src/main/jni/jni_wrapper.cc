@@ -28,19 +28,21 @@ SOFTWARE.
 #include <android/log.h>
 
 #include "aloha_stats.h"
-#include "../bricks/make_scope_guard.h"
+#include "make_scope_guard.h"
 
 #define LOG_TAG "AlohaStats_jni_wrapper"
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
-// jni helper functions
 namespace {
+
+static std::unique_ptr<aloha::Stats> g_stats;
 
 static JavaVM* g_jvm = 0;
 // Cached class and it's method for faster access from native code
 static jclass g_httpTransportClass = 0;
 static jmethodID g_httpTransportClass_postToDefaultUrl = 0;
 
+// JNI helper function
 std::string ToNativeString(JNIEnv* env, jstring str) {
   std::string result;
   char const* utfBuffer = env->GetStringUTFChars(str, 0);
@@ -55,6 +57,11 @@ std::string ToNativeString(JNIEnv* env, jstring str) {
 
 }  // namespace
 
+// Exported for access from C++ code
+extern JavaVM* GetJVM() {
+  return g_jvm;
+}
+
 extern "C" {
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void*) {
   g_jvm = vm;
@@ -63,7 +70,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void*) {
 
 JNIEXPORT bool JNICALL
     Java_org_alohastats_lib_Statistics_logEvent__Ljava_lang_String_2(JNIEnv* env, jclass, jstring eventName) {
-  return aloha::Stats::Instance().LogEvent(ToNativeString(env, eventName));
+  return g_stats->LogEvent(ToNativeString(env, eventName));
 }
 
 JNIEXPORT bool JNICALL
@@ -71,12 +78,19 @@ JNIEXPORT bool JNICALL
                                                                                         jclass,
                                                                                         jstring eventName,
                                                                                         jstring eventValue) {
-  return aloha::Stats::Instance().LogEvent(ToNativeString(env, eventName), ToNativeString(env, eventValue));
+  return g_stats->LogEvent(ToNativeString(env, eventName), ToNativeString(env, eventValue));
 }
 
-JNIEXPORT void JNICALL
-    Java_org_alohastats_lib_Statistics_cacheHttpTransport(JNIEnv* env, jclass, jclass httpTransportClass) {
-  if (g_httpTransportClass) env->DeleteGlobalRef(g_httpTransportClass);
+JNIEXPORT void JNICALL Java_org_alohastats_lib_Statistics_setupHttpTransport(JNIEnv* env,
+                                                                             jclass,
+                                                                             jstring url,
+                                                                             jclass httpTransportClass) {
+  // Initialize statistics engine
+  g_stats.reset(new aloha::Stats(ToNativeString(env, url)));
+
+  if (g_httpTransportClass) {
+    env->DeleteGlobalRef(g_httpTransportClass);
+  }
 
   g_httpTransportClass = static_cast<jclass>(env->NewGlobalRef(httpTransportClass));
   g_httpTransportClass_postToDefaultUrl =
@@ -85,49 +99,42 @@ JNIEXPORT void JNICALL
 
 }  // extern "C"
 
+// @TODO (AlexZ) Temporarily commented out, will be rewritten with fresh implementation soon
 //***********************************************************************
 // Exported functions implementation
 //***********************************************************************
-namespace aloha {
-
-struct DetachThreadOnScopeExit {
-  ~DetachThreadOnScopeExit() {
-    g_jvm->DetachCurrentThread();
-  }
-};
-
-bool HttpPostToDefaultUrl(const std::string& body_data) {
-  JNIEnv* env;
-  if (JNI_OK != g_jvm->AttachCurrentThread(&env, nullptr)) {
-    LOGE("Can't AttachCurrentThread in HttpPostToDefaultUrl()");
-    return false;
-  }
-
-  DetachThreadOnScopeExit thread_detacher;
-
-  // Swiss-knife style: solving two tasks on scope exit
-  auto array_deleter = [&](jbyteArray arr) { env->DeleteLocalRef(arr); };
-  std::unique_ptr<_jbyteArray, decltype(array_deleter)> jni_body_data(env->NewByteArray(body_data.size()),
-                                                                      array_deleter);
-  if (env->ExceptionOccurred()) {
-    env->ExceptionDescribe();
-    return false;
-  }
-
-  env->SetByteArrayRegion(
-      jni_body_data.get(), 0, body_data.size(), reinterpret_cast<const jbyte*>(body_data.data()));
-  if (env->ExceptionCheck()) {
-    env->ExceptionDescribe();
-    return false;
-  }
-
-  const jboolean success = env->CallStaticBooleanMethod(
-      g_httpTransportClass, g_httpTransportClass_postToDefaultUrl, jni_body_data.get());
-  if (env->ExceptionCheck()) {
-    env->ExceptionDescribe();
-    return false;
-  }
-  return success;
-}
-
-}  // namespace aloha
+// namespace aloha {
+//
+// bool HttpPostToDefaultUrl(const std::string& body_data) {
+//  JNIEnv* env;
+//  if (JNI_OK != GetJVM()->AttachCurrentThread(&env, nullptr)) {
+//    LOGE("Can't AttachCurrentThread in HttpPostToDefaultUrl()");
+//    return false;
+//  }
+//
+//  const auto thread_detacher = bricks::MakeScopeGuard([]{ GetJVM()->DetachCurrentThread(); });
+//
+//  auto const jni_body_data = bricks::MakePointerScopeGuard(env->NewByteArray(body_data.size()), [&](jbyteArray
+//  arr) { env->DeleteLocalRef(arr); });
+//  if (env->ExceptionOccurred()) {
+//    env->ExceptionDescribe();
+//    return false;
+//  }
+//
+//  env->SetByteArrayRegion(
+//      jni_body_data.get(), 0, body_data.size(), reinterpret_cast<const jbyte*>(body_data.data()));
+//  if (env->ExceptionCheck()) {
+//    env->ExceptionDescribe();
+//    return false;
+//  }
+//
+//  const jboolean success = env->CallStaticBooleanMethod(
+//      g_httpTransportClass, g_httpTransportClass_postToDefaultUrl, jni_body_data.get());
+//  if (env->ExceptionCheck()) {
+//    env->ExceptionDescribe();
+//    return false;
+//  }
+//  return success;
+//}
+//
+//}  // namespace aloha

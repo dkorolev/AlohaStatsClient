@@ -22,40 +22,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 *******************************************************************************/
 
-#include "aloha_stats.hpp"
-#include "platform_http.hpp"
+#include "http_client.h"
+#include <jni.h>
 
-// TODO
-#include <thread>
+// This function should be provided by JNI wrapper
+extern JavaVM* GetJVM();
 
 namespace aloha {
 
-class Stats::Impl {
-  // TODO
-};
-
-Stats::Stats() : impl_(new Impl()) {
-}
-
-bool Stats::LogEvent(std::string const& event_name) const {
-  // TODO
-  std::thread(&HttpPostToDefaultUrl, std::string(event_name)).detach();
-  return true;
-}
-
-bool Stats::LogEvent(std::string const& event_name, std::string const& event_value) const {
-  // TODO
-  std::thread(&HttpPostToDefaultUrl, event_name + "=" + event_value).detach();
-  return true;
-}
-
-Stats& Stats::Instance() {
-  // C++11 guarantees that it should work correctly in multi-threading environment:
-  // §6.7 [stmt.dcl] p4
-  // If control enters the declaration concurrently while the variable is being initialized,
-  // the concurrent execution shall wait for completion of the initialization.
-  static Stats instance;
-  return instance;
+bool HttpClient::Connect() {
+  // TODO (AlexZ) Add correct JNI implementation
+  JavaVM* jvm = GetJVM();
+  return false;
 }
 
 }  // namespace aloha

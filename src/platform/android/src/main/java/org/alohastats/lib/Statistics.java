@@ -28,11 +28,10 @@ public class Statistics
 {
   static {
     System.loadLibrary("alohastats");
-    // Cache java class to call it later directly from native code
-    // We are forced to do it, because jni's FindClass doesn't work if called from native C++ thread
-    cacheHttpTransport(HttpTransport.class);
+    setupHttpTransport(BuildConfig.STATISTICS_URL, HttpTransport.class);
   }
-  native static private void cacheHttpTransport(Class cls);
+  // Initialize C++ engine
+  native static private void setupHttpTransport(String url, Class httpTransportClass);
 
   native static public void logEvent(String eventName);
   native static public void logEvent(String eventName, String eventValue);
