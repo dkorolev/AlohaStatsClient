@@ -13,7 +13,7 @@ ifeq ($(OS),Darwin)
 endif
 
 test: all
-	${BIN}
+	mkdir -p .tmp && ${BIN} --test_tmpdir=.tmp && rm -rf .tmp
 
 all: build ${BIN}
 
@@ -21,7 +21,7 @@ indent:
 	(find . -name "*.cc" ; find . -name "*.h") | xargs clang-format-3.5 -i
 
 clean:
-	rm -rf build
+	rm -rf build .tmp
 
 build:
 	mkdir -p $@

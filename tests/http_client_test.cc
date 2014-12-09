@@ -16,17 +16,19 @@
 #include "../3party/gtest/gtest.h"
 #include "../3party/gtest/gtest-main.h"
 
-using std::string;
 using std::cout;
 using std::endl;
-using std::ifstream;
-using std::ofstream;
-using std::to_string;
-using std::thread;
 using std::function;
+using std::ifstream;
+using std::move;
+using std::ofstream;
+using std::string;
+using std::thread;
+using std::to_string;
 
 using aloha::HttpClient;
 
+using bricks::ScopeGuard;
 using bricks::MakeScopeGuard;
 
 using bricks::ReadFileAsString;
@@ -37,8 +39,7 @@ using bricks::net::HTTPHeadersType;
 using bricks::net::HTTPResponseCode;
 
 DEFINE_int32(port, 8080, "Local port to use for the test HTTP server.");
-
-// TODO(dkorolev): 1) add path to local files == ".tmp/" to flags, 2) mkdir .tmp / rm -rf .tmp in the Makefile.
+DEFINE_string(test_tmpdir, ".", "Local path for the test to create temporary files in.");
 
 class UseHTTPBinTestServer {
  public:
@@ -137,11 +138,16 @@ class UseLocalHTTPTestServer {
   }
 };
 
-static void WriteStringToFile(string file_name, string string_to_write) {
+static void WriteStringToFile(const string& file_name, const string& contents) {
   ofstream file(file_name);
-  file << string_to_write;
+  file << contents;
   ASSERT_TRUE(file.good());
 }
+
+static auto ScopedFileCleanup = [](const string& file_name) {
+  ::remove(file_name.c_str());
+  return move(MakeScopeGuard([&] { ::remove(file_name.c_str()); }));
+};
 
 template <typename T>
 class HTTPClient : public ::testing::Test {};
@@ -150,7 +156,7 @@ typedef ::testing::Types<UseLocalHTTPTestServer, UseHTTPBinTestServer> HTTPClien
 TYPED_TEST_CASE(HTTPClient, HTTPClientTestTypeList);
 
 TYPED_TEST(HTTPClient, GetIntoMemory) {
-  auto server_scope = TypeParam::SpawnServer();
+  const auto server_scope = TypeParam::SpawnServer();
   const string url = TypeParam::BaseURL() + "/drip?numbytes=7";
   HttpClient client(url);
   ASSERT_TRUE(client.Connect());
@@ -161,12 +167,10 @@ TYPED_TEST(HTTPClient, GetIntoMemory) {
 }
 
 TYPED_TEST(HTTPClient, GetIntoFile) {
-  auto server_scope = TypeParam::SpawnServer();
+  const string file_name = FLAGS_test_tmpdir + "/some_test_file_for_http_get";
+  const auto test_file_scope = ScopedFileCleanup(file_name);
+  const auto server_scope = TypeParam::SpawnServer();
   const string url = TypeParam::BaseURL() + "/drip?numbytes=5";
-
-  const char* file_name = "some_test_file_for_http_get";
-  ::remove(file_name);
-  const auto file_deleter = MakeScopeGuard([&] { ::remove(file_name); });
   HttpClient client(url);
   client.set_received_file(file_name);
   ASSERT_TRUE(client.Connect());
@@ -175,7 +179,7 @@ TYPED_TEST(HTTPClient, GetIntoFile) {
 }
 
 TYPED_TEST(HTTPClient, PostFromMemoryIntoMemory) {
-  auto server_scope = TypeParam::SpawnServer();
+  const auto server_scope = TypeParam::SpawnServer();
   const string url = TypeParam::BaseURL() + "/post";
   string const post_body = "Hello, World!";
   HttpClient client(url);
@@ -186,7 +190,7 @@ TYPED_TEST(HTTPClient, PostFromMemoryIntoMemory) {
 }
 
 TYPED_TEST(HTTPClient, PostFromInvalidFile) {
-  auto server_scope = TypeParam::SpawnServer();
+  const auto server_scope = TypeParam::SpawnServer();
   const string url = TypeParam::BaseURL() + "/post";
   HttpClient client(url);
   client.set_post_file("this_file_should_not_exist", "text/plain");
@@ -198,11 +202,11 @@ TYPED_TEST(HTTPClient, PostFromInvalidFile) {
 }
 
 TYPED_TEST(HTTPClient, PostFromFileIntoMemory) {
-  auto server_scope = TypeParam::SpawnServer();
+  const string file_name = FLAGS_test_tmpdir + "/some_input_test_file_for_http_post";
+  const auto test_file_scope = ScopedFileCleanup(file_name);
+  const auto server_scope = TypeParam::SpawnServer();
   const string url = TypeParam::BaseURL() + "/post";
   // Use it as a file name and as a test contents string.
-  const string file_name = "some_input_test_file_for_http_post";
-  const auto file_deleter = MakeScopeGuard([&] { ::remove(file_name.c_str()); });
   WriteStringToFile(file_name, file_name);
   HttpClient client(url);
   client.set_post_file(file_name, "text/plain");
@@ -211,27 +215,24 @@ TYPED_TEST(HTTPClient, PostFromFileIntoMemory) {
 }
 
 TYPED_TEST(HTTPClient, PostFromMemoryIntoFile) {
-  auto server_scope = TypeParam::SpawnServer();
+  const string file_name = FLAGS_test_tmpdir + "/some_output_test_file_for_http_post";
+  const auto test_file_scope = ScopedFileCleanup(file_name);
+  const auto server_scope = TypeParam::SpawnServer();
   const string url = TypeParam::BaseURL() + "/post";
-  // Use it as a file name and as a test contents string.
-  const string file_name = "some_output_test_file_for_http_post";
-  const auto file_deleter = MakeScopeGuard([&] { ::remove(file_name.c_str()); });
   HttpClient client(url);
-  client.set_received_file(file_name).set_post_body(file_name, "text/plain");
+  client.set_received_file(file_name).set_post_body("TEST BODY", "text/plain");
   ASSERT_TRUE(client.Connect());
   EXPECT_TRUE(client.server_response().empty());
-  EXPECT_NE(string::npos, ReadFileAsString(file_name).find(file_name));
+  EXPECT_NE(string::npos, ReadFileAsString(file_name).find("TEST BODY"));
 }
 
 TYPED_TEST(HTTPClient, PostFromFileIntoFile) {
-  auto server_scope = TypeParam::SpawnServer();
+  const string input_file_name = FLAGS_test_tmpdir + "/some_complex_input_test_file_for_http_post";
+  const string output_file_name = FLAGS_test_tmpdir + "/some_complex_output_test_file_for_http_post";
+  const auto input_file_scope = ScopedFileCleanup(input_file_name);
+  const auto output_file_scope = ScopedFileCleanup(output_file_name);
+  const auto server_scope = TypeParam::SpawnServer();
   const string url = TypeParam::BaseURL() + "/post";
-  const string input_file_name = "some_complex_input_test_file_for_http_post";
-  const string output_file_name = "some_complex_output_test_file_for_http_post";
-  const auto file_deleter = MakeScopeGuard([&] {
-    ::remove(input_file_name.c_str());
-    ::remove(output_file_name.c_str());
-  });
   const string post_body = "Aloha, this text should pass from one file to another. Mahalo!";
   WriteStringToFile(input_file_name, post_body);
   HttpClient client(url);
@@ -245,7 +246,7 @@ TYPED_TEST(HTTPClient, PostFromFileIntoFile) {
 }
 
 TYPED_TEST(HTTPClient, ErrorCodes) {
-  auto server_scope = TypeParam::SpawnServer();
+  const auto server_scope = TypeParam::SpawnServer();
   const string url = TypeParam::BaseURL() + "/status/403";
   HttpClient client(url);
   ASSERT_FALSE(client.Connect());
@@ -253,7 +254,7 @@ TYPED_TEST(HTTPClient, ErrorCodes) {
 }
 
 TYPED_TEST(HTTPClient, Https) {
-  auto server_scope = TypeParam::SpawnServer();
+  const auto server_scope = TypeParam::SpawnServer();
   const string url = TypeParam::BaseURL() + "/get?Aloha=Mahalo";
   HttpClient client(url);
   ASSERT_TRUE(client.Connect());
@@ -263,7 +264,7 @@ TYPED_TEST(HTTPClient, Https) {
 }
 
 TYPED_TEST(HTTPClient, HttpRedirect302) {
-  auto server_scope = TypeParam::SpawnServer();
+  const auto server_scope = TypeParam::SpawnServer();
   const string url = TypeParam::BaseURL() + "/redirect-to?url=/get";
   HttpClient client(url);
   ASSERT_TRUE(client.Connect());
@@ -272,7 +273,7 @@ TYPED_TEST(HTTPClient, HttpRedirect302) {
 }
 
 TYPED_TEST(HTTPClient, UserAgent) {
-  auto server_scope = TypeParam::SpawnServer();
+  const auto server_scope = TypeParam::SpawnServer();
   const string url = TypeParam::BaseURL() + "/user-agent";
   HttpClient client(url);
   const string custom_user_agent = "Aloha User Agent";
@@ -284,7 +285,7 @@ TYPED_TEST(HTTPClient, UserAgent) {
 // TODO(dkorolev): Get rid of the tests involving external URLs.
 TYPED_TEST(HTTPClient, HttpRedirect301) {
   if (TypeParam::SupportsExternalURLs()) {
-    auto server_scope = TypeParam::SpawnServer();
+    const auto server_scope = TypeParam::SpawnServer();
     HttpClient client("http://github.com");
     ASSERT_TRUE(client.Connect());
     EXPECT_NE(client.url_requested(), client.url_received());
@@ -295,7 +296,7 @@ TYPED_TEST(HTTPClient, HttpRedirect301) {
 
 TYPED_TEST(HTTPClient, HttpRedirect307) {
   if (TypeParam::SupportsExternalURLs()) {
-    auto server_scope = TypeParam::SpawnServer();
+    const auto server_scope = TypeParam::SpawnServer();
     HttpClient client("http://msn.com");
     ASSERT_TRUE(client.Connect());
     EXPECT_EQ("http://www.msn.com/", client.url_received());
@@ -305,7 +306,7 @@ TYPED_TEST(HTTPClient, HttpRedirect307) {
 
 TYPED_TEST(HTTPClient, InvalidUrl) {
   if (TypeParam::SupportsExternalURLs()) {
-    auto server_scope = TypeParam::SpawnServer();
+    const auto server_scope = TypeParam::SpawnServer();
     HttpClient client("http://very.bad.url");
     EXPECT_FALSE(client.Connect());
     EXPECT_NE(200, client.error_code());
