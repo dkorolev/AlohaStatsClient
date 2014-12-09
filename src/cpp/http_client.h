@@ -119,6 +119,6 @@ class HttpClient {
 
 }  // namespace aloha
 
-#ifdef __APPLE__
+#if defined(__APPLE__)
 #include "http_client_apple.mm"
 #endif

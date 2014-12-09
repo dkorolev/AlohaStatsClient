@@ -1,3 +1,6 @@
+// TODO (dkorolev) add header guards when header's name and location become stable.
+#pragma once
+
 /*******************************************************************************
 The MIT License (MIT)
 
@@ -22,40 +25,37 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 *******************************************************************************/
 
-#include "aloha_stats.hpp"
-#include "platform_http.hpp"
-
-// TODO
+#include <string>
 #include <thread>
+#include <iostream>
+
+#include "http_client.h"
 
 namespace aloha {
 
-class Stats::Impl {
-  // TODO
+class Stats {
+  std::string statistics_server_url_;
+
+ public:
+  Stats(std::string const& statistics_server_url) : statistics_server_url_(statistics_server_url) {
+  }
+
+  bool LogEvent(std::string const& event_name) const {
+    std::thread(&SimpleSampleHttpPost, statistics_server_url_, event_name).detach();
+  }
+
+  bool LogEvent(std::string const& event_name, std::string const& event_value) const {
+    std::thread(&SimpleSampleHttpPost, statistics_server_url_, event_name + "=" + event_value).detach();
+  }
+
+ private:
+  // TODO temporary stub function
+  static void SimpleSampleHttpPost(const std::string& url, const std::string& post_data) {
+    if (!HttpClient(url).set_post_body(post_data, "text/plain").Connect())
+      std::cerr << "Error while sending data to the server " << url << std::endl;
+  }
 };
 
-Stats::Stats() : impl_(new Impl()) {
-}
-
-bool Stats::LogEvent(std::string const& event_name) const {
-  // TODO
-  std::thread(&HttpPostToDefaultUrl, std::string(event_name)).detach();
-  return true;
-}
-
-bool Stats::LogEvent(std::string const& event_name, std::string const& event_value) const {
-  // TODO
-  std::thread(&HttpPostToDefaultUrl, event_name + "=" + event_value).detach();
-  return true;
-}
-
-Stats& Stats::Instance() {
-  // C++11 guarantees that it should work correctly in multi-threading environment:
-  // §6.7 [stmt.dcl] p4
-  // If control enters the declaration concurrently while the variable is being initialized,
-  // the concurrent execution shall wait for completion of the initialization.
-  static Stats instance;
-  return instance;
-}
+std::string HelloWorld();
 
 }  // namespace aloha

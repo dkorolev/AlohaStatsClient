@@ -22,30 +22,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 *******************************************************************************/
 
-#ifndef ALOHA_STATS_HPP
-#define ALOHA_STATS_HPP
+#include "http_client.h"
+#include <jni.h>
 
-#include <string>
-#include <memory>
+// This function should be provided by JNI wrapper
+extern JavaVM* GetJVM();
 
 namespace aloha {
 
-class Stats {
-  Stats();
-
-  // Hide implementation to avoid possible platform-dependent includes in the header
-  class Impl;
-  std::unique_ptr<Impl> impl_;
-
- public:
-  static Stats& Instance();
-
-  bool LogEvent(std::string const& event_name) const;
-  bool LogEvent(std::string const& event_name, std::string const& event_value) const;
-};
-
-std::string HelloWorld();
+bool HttpClient::Connect() {
+  // TODO (AlexZ) Add correct JNI implementation
+  JavaVM* jvm = GetJVM();
+  return false;
+}
 
 }  // namespace aloha
-
-#endif  // ALOHA_STATS_HPP

@@ -4,10 +4,10 @@
 #include <thread>
 #include <functional>
 
-#include "../src/cpp/http_client.hpp"
+#include "../src/cpp/http_client.h"
 
-#include "../src/bricks/make_scope_guard.hpp"
-#include "../src/bricks/read_file_as_string.hpp"
+#include "../src/bricks/make_scope_guard.h"
+#include "../src/bricks/read_file_as_string.h"
 
 #include "../src/bricks/net/posix_http_server.h"  // TODO(dkorolev): Structure `bricks`, I know how!
 

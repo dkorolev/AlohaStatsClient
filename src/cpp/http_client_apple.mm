@@ -36,7 +36,7 @@ SOFTWARE.
 #import <Foundation/NSError.h>
 #import <Foundation/NSFileManager.h>
 
-#include "http_client.hpp"
+#include "http_client.h"
 
 
 #define TIMEOUT_IN_SECONDS 30.0
