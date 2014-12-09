@@ -27,8 +27,8 @@ SOFTWARE.
 #include <memory>
 #include <android/log.h>
 
-#include "aloha_stats.h"
-#include "make_scope_guard.h"
+#include "../../../../../cpp/aloha_stats.h"
+#include "../../../../../bricks/make_scope_guard.h"
 
 #define LOG_TAG "AlohaStats_jni_wrapper"
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
