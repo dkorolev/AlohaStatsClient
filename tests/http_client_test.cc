@@ -41,7 +41,7 @@ using bricks::net::HTTPHeadersType;
 using bricks::net::HTTPResponseCode;
 
 DEFINE_int32(port, 8080, "Local port to use for the test HTTP server.");
-DEFINE_string(test_tmpdir, ".", "Local path for the test to create temporary files in.");
+DEFINE_string(test_tmpdir, "build", "Local path for the test to create temporary files in.");
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
