@@ -455,7 +455,7 @@ TYPED_TEST(HTTPClientTemplatedTest, HttpRedirect307) {
 
 TYPED_TEST(HTTPClientTemplatedTest, InvalidUrl) {
   if (TypeParam::SupportsExternalURLs()) {
-    const auto response = HTTP(GET("http://999.999.999.999"));
+    const auto response = HTTP(GET("http://very.bad.url/that/will/not/load"));
     EXPECT_NE(200, response.code);
   }
 }
