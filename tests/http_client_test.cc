@@ -319,7 +319,7 @@ TYPED_TEST_CASE(HTTPClientTemplatedTest, HTTPClientTestTypeList);
 TYPED_TEST(HTTPClientTemplatedTest, GetToBuffer) {
   const auto server_scope = TypeParam::SpawnServer();
   const string url = TypeParam::BaseURL() + "/drip?numbytes=7";
-  auto response = HTTP(GET(url));
+  const auto response = HTTP(GET(url));
   EXPECT_EQ(200, response.code);
   EXPECT_EQ("*******", response.body);
   EXPECT_EQ(url, response.url);
@@ -332,7 +332,7 @@ TYPED_TEST(HTTPClientTemplatedTest, GetToFile) {
   const auto test_file_scope = ScopedFileCleanup(file_name);
   const auto server_scope = TypeParam::SpawnServer();
   const string url = TypeParam::BaseURL() + "/drip?numbytes=5";
-  auto response = HTTP(GET(url), SaveResponseToFile(file_name));
+  const auto response = HTTP(GET(url), SaveResponseToFile(file_name));
   EXPECT_EQ(200, response.code);
   EXPECT_EQ(file_name, response.body_file_name);
   EXPECT_EQ(url, response.url);
@@ -345,7 +345,7 @@ TYPED_TEST(HTTPClientTemplatedTest, PostFromBufferToBuffer) {
   const auto server_scope = TypeParam::SpawnServer();
   const string url = TypeParam::BaseURL() + "/post";
   const string post_body = "Hello, World!";
-  auto response = HTTP(POST(url, post_body, "application/octet-stream"));
+  const auto response = HTTP(POST(url, post_body, "application/octet-stream"));
   EXPECT_NE(string::npos, response.body.find("\"data\": \"" + post_body + "\"")) << response.body;
 }
 
@@ -365,7 +365,7 @@ TYPED_TEST(HTTPClientTemplatedTest, PostFromFileToBuffer) {
   const auto server_scope = TypeParam::SpawnServer();
   const string url = TypeParam::BaseURL() + "/post";
   WriteStringToFile(file_name, file_name);
-  auto response = HTTP(POSTFromFile(url, file_name, "application/octet-stream"));
+  const auto response = HTTP(POSTFromFile(url, file_name, "application/octet-stream"));
   EXPECT_EQ(200, response.code);
   EXPECT_NE(string::npos, response.body.find(file_name));
 }
@@ -375,7 +375,7 @@ TYPED_TEST(HTTPClientTemplatedTest, PostFromBufferToFile) {
   const auto test_file_scope = ScopedFileCleanup(file_name);
   const auto server_scope = TypeParam::SpawnServer();
   const string url = TypeParam::BaseURL() + "/post";
-  auto response = HTTP(POST(url, "TEST BODY", "text/plain"), SaveResponseToFile(file_name));
+  const auto response = HTTP(POST(url, "TEST BODY", "text/plain"), SaveResponseToFile(file_name));
   EXPECT_EQ(200, response.code);
   EXPECT_NE(string::npos, ReadFileAsString(response.body_file_name).find("TEST BODY"));
 }
@@ -389,7 +389,7 @@ TYPED_TEST(HTTPClientTemplatedTest, PostFromFileToFile) {
   const string url = TypeParam::BaseURL() + "/post";
   const string post_body = "Aloha, this text should pass from one file to another. Mahalo!";
   WriteStringToFile(request_file_name, post_body);
-  auto response =
+  const auto response =
       HTTP(POSTFromFile(url, request_file_name, "text/plain"), SaveResponseToFile(response_file_name));
   EXPECT_EQ(200, response.code);
   {
@@ -407,7 +407,7 @@ TYPED_TEST(HTTPClientTemplatedTest, ErrorCodes) {
 TYPED_TEST(HTTPClientTemplatedTest, Https) {
   const auto server_scope = TypeParam::SpawnServer();
   const string url = TypeParam::BaseURL() + "/get?Aloha=Mahalo";
-  auto response = HTTP(GET(url));
+  const auto response = HTTP(GET(url));
   EXPECT_EQ(url, response.url);
   EXPECT_EQ(200, response.code);
   EXPECT_FALSE(response.was_redirected);
@@ -417,7 +417,7 @@ TYPED_TEST(HTTPClientTemplatedTest, Https) {
 TYPED_TEST(HTTPClientTemplatedTest, HttpRedirect302) {
   const auto server_scope = TypeParam::SpawnServer();
   const string url = TypeParam::BaseURL() + "/redirect-to?url=/get";
-  auto response = HTTP(GET(url));
+  const auto response = HTTP(GET(url));
   EXPECT_EQ(url, response.url);
   EXPECT_EQ(200, response.code);
   EXPECT_EQ(TypeParam::BaseURL() + "/get", response.url_after_redirects);
@@ -428,7 +428,7 @@ TYPED_TEST(HTTPClientTemplatedTest, UserAgent) {
   const auto server_scope = TypeParam::SpawnServer();
   const string url = TypeParam::BaseURL() + "/user-agent";
   const string custom_user_agent = "Aloha User Agent";
-  auto response = HTTP(GET(url).SetUserAgent(custom_user_agent));
+  const auto response = HTTP(GET(url).SetUserAgent(custom_user_agent));
   EXPECT_EQ(url, response.url);
   EXPECT_EQ(200, response.code);
   EXPECT_NE(string::npos, response.body.find(custom_user_agent));
@@ -437,7 +437,7 @@ TYPED_TEST(HTTPClientTemplatedTest, UserAgent) {
 // TODO(dkorolev): Get rid of the tests involving external URLs.
 TYPED_TEST(HTTPClientTemplatedTest, HttpRedirect301) {
   if (TypeParam::SupportsExternalURLs()) {
-    auto response = HTTP(GET("http://github.com"));
+    const auto response = HTTP(GET("http://github.com"));
     EXPECT_EQ(200, response.code);
     EXPECT_TRUE(response.was_redirected);
     EXPECT_EQ("https://github.com/", response.url_after_redirects);
@@ -446,7 +446,7 @@ TYPED_TEST(HTTPClientTemplatedTest, HttpRedirect301) {
 
 TYPED_TEST(HTTPClientTemplatedTest, HttpRedirect307) {
   if (TypeParam::SupportsExternalURLs()) {
-    auto response = HTTP(GET("http://msn.com"));
+    const auto response = HTTP(GET("http://msn.com"));
     EXPECT_EQ(200, response.code);
     EXPECT_TRUE(response.was_redirected);
     EXPECT_EQ("http://www.msn.com/", response.url_after_redirects);
@@ -455,7 +455,7 @@ TYPED_TEST(HTTPClientTemplatedTest, HttpRedirect307) {
 
 TYPED_TEST(HTTPClientTemplatedTest, InvalidUrl) {
   if (TypeParam::SupportsExternalURLs()) {
-    auto response = HTTP(GET("http://999.999.999.999"));
+    const auto response = HTTP(GET("http://999.999.999.999"));
     EXPECT_NE(200, response.code);
   }
 }
