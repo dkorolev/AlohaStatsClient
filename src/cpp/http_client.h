@@ -127,4 +127,6 @@ class HTTPClientPlatformWrapper {
 
 #if defined(__APPLE__)
 #include "http_client_apple.mm"
+#elif defined(ANDROID)
+#include "http_client_android.cc"
 #endif
