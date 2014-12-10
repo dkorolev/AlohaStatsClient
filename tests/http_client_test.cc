@@ -305,7 +305,7 @@ static void WriteStringToFile(const string& file_name, const string& contents) {
   ASSERT_TRUE(file.good());
 }
 
-static auto ScopedFileCleanup = [](const string& file_name) {
+static const auto ScopedFileCleanup = [](const string& file_name) {
   ::remove(file_name.c_str());
   return move(MakeScopeGuard([&] { ::remove(file_name.c_str()); }));
 };
