@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace aloha {
 
-class HttpClient {
+class HTTPClientPlatformWrapper {
  public:
   enum {
     kNotInitialized = -1,
@@ -50,15 +50,21 @@ class HttpClient {
   std::string user_agent_;
   std::string post_body_;
 
-  HttpClient(const HttpClient&) = delete;
-  HttpClient(HttpClient&&) = delete;
-  HttpClient& operator=(const HttpClient&) = delete;
+  HTTPClientPlatformWrapper(const HTTPClientPlatformWrapper&) = delete;
+  HTTPClientPlatformWrapper(HTTPClientPlatformWrapper&&) = delete;
+  HTTPClientPlatformWrapper& operator=(const HTTPClientPlatformWrapper&) = delete;
 
  public:
-  HttpClient(const std::string& url) : url_requested_(url), error_code_(kNotInitialized) {
+  HTTPClientPlatformWrapper() : error_code_(kNotInitialized) {
+  }
+  HTTPClientPlatformWrapper(const std::string& url) : url_requested_(url), error_code_(kNotInitialized) {
+  }
+  HTTPClientPlatformWrapper& set_url_requested(const std::string& url) {
+    url_requested_ = url;
+    return *this;
   }
   // This method is mutually exclusive with set_post_body().
-  HttpClient& set_post_file(const std::string& post_file, const std::string& content_type) {
+  HTTPClientPlatformWrapper& set_post_file(const std::string& post_file, const std::string& content_type) {
     post_file_ = post_file;
     content_type_ = content_type;
     // TODO (dkorolev) replace with exceptions as discussed offline.
@@ -66,16 +72,16 @@ class HttpClient {
     return *this;
   }
   // If set, stores server reply in file specified.
-  HttpClient& set_received_file(const std::string& received_file) {
+  HTTPClientPlatformWrapper& set_received_file(const std::string& received_file) {
     received_file_ = received_file;
     return *this;
   }
-  HttpClient& set_user_agent(const std::string& user_agent) {
+  HTTPClientPlatformWrapper& set_user_agent(const std::string& user_agent) {
     user_agent_ = user_agent;
     return *this;
   }
   // This method is mutually exclusive with set_post_file().
-  HttpClient& set_post_body(const std::string& post_body, const std::string& content_type) {
+  HTTPClientPlatformWrapper& set_post_body(const std::string& post_body, const std::string& content_type) {
     post_body_ = post_body;
     content_type_ = content_type;
     // TODO (dkorolev) replace with exceptions as discussed offline.
@@ -84,7 +90,7 @@ class HttpClient {
   }
   // Move version to avoid string copying.
   // This method is mutually exclusive with set_post_file().
-  HttpClient& set_post_body(std::string&& post_body, const std::string& content_type) {
+  HTTPClientPlatformWrapper& set_post_body(std::string&& post_body, const std::string& content_type) {
     post_body_ = post_body;
     post_file_.clear();
     content_type_ = content_type;
@@ -94,7 +100,7 @@ class HttpClient {
   // Synchronous (blocking) call, should be implemented for each platform
   // @returns true only if server answered with HTTP 200 OK
   // @note Implementations should transparently support all needed HTTP redirects
-  bool Connect();
+  bool RunHTTPRequest();
 
   std::string const& url_requested() const {
     return url_requested_;
@@ -115,7 +121,7 @@ class HttpClient {
     return server_response_;
   }
 
-};  // class HttpClient
+};  // class HTTPClientPlatformWrapper
 
 }  // namespace aloha
 
