@@ -30,7 +30,7 @@ extern JavaVM* GetJVM();
 
 namespace aloha {
 
-bool HttpClient::Connect() {
+bool HTTPClientPlatformWrapper::Connect() {
   // TODO (AlexZ) Add correct JNI implementation
   JavaVM* jvm = GetJVM();
   return false;
