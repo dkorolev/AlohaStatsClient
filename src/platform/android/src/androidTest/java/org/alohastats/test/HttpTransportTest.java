@@ -113,7 +113,7 @@ public class HttpTransportTest extends InstrumentationTestCase {
       final HttpTransport.Params r = HttpTransport.Run(p);
       assertEquals(200, r.httpResponseCode);
       final String receivedBody = new String(p.data);
-      assertTrue(receivedBody, -1 != receivedBody.indexOf(p.inputFilePath) );
+      assertTrue(receivedBody, -1 != receivedBody.indexOf(p.inputFilePath));
     } finally {
       (new File(p.inputFilePath)).delete();
     }

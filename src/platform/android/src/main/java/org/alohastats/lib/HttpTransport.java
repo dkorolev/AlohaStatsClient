@@ -37,33 +37,11 @@ import java.net.URL;
 
 public class HttpTransport {
 
-  // Globally accessible for faster unit-testing
-  public static int TIMEOUT_IN_MILLISECONDS = 30000;
-
   // TODO(AlexZ): tune for larger files
   private final static int STREAM_BUFFER_SIZE = 1024 * 8;
   private final static String TAG = "HttpTransport";
-
-  public static class Params {
-    public Params(String url) {
-      this.url = url;
-    }
-    public String url = null;
-    // Can be different from url in case of redirects.
-    public String receivedUrl = null;
-    // SHOULD be specified for any POST request (any request where we send data to the server).
-    public String contentType = null;
-    // GET if null and inputFilePath is null.
-    // Sent in POST otherwise.
-    public byte[] data = null;
-    // Send from input file if specified instead of data.
-    public String inputFilePath = null;
-    // Received data is stored here if not null or in data otherwise.
-    public String outputFilePath = null;
-    // Optionally client can override default HTTP User-Agent.
-    public String userAgent = null;
-    public int httpResponseCode = -1;
-  }
+  // Globally accessible for faster unit-testing
+  public static int TIMEOUT_IN_MILLISECONDS = 30000;
 
   public static Params Run(final Params p) throws IOException, NullPointerException {
     HttpURLConnection connection = null;
@@ -91,8 +69,8 @@ public class HttpTransport {
           ostream.close(); // IOException
         } else {
           final File file = new File(p.inputFilePath);
-          assert(file.length() == (int)file.length());
-          connection.setFixedLengthStreamingMode((int)file.length());
+          assert (file.length() == (int) file.length());
+          connection.setFixedLengthStreamingMode((int) file.length());
           final BufferedInputStream istream = new BufferedInputStream(new FileInputStream(file), STREAM_BUFFER_SIZE);
           final BufferedOutputStream ostream = new BufferedOutputStream(connection.getOutputStream(), STREAM_BUFFER_SIZE);
           final byte[] buffer = new byte[STREAM_BUFFER_SIZE];
@@ -126,7 +104,7 @@ public class HttpTransport {
         istream.close(); // IOException
         ostream.close(); // IOException
         if (ostream.getClass().equals(ByteArrayOutputStream.class)) {
-          p.data = ((ByteArrayOutputStream)ostream).toByteArray();
+          p.data = ((ByteArrayOutputStream) ostream).toByteArray();
         }
       }
     } finally {
@@ -134,6 +112,27 @@ public class HttpTransport {
         connection.disconnect();
     }
     return p;
+  }
+
+  public static class Params {
+    public String url = null;
+    // Can be different from url in case of redirects.
+    public String receivedUrl = null;
+    // SHOULD be specified for any POST request (any request where we send data to the server).
+    public String contentType = null;
+    // GET if null and inputFilePath is null.
+    // Sent in POST otherwise.
+    public byte[] data = null;
+    // Send from input file if specified instead of data.
+    public String inputFilePath = null;
+    // Received data is stored here if not null or in data otherwise.
+    public String outputFilePath = null;
+    // Optionally client can override default HTTP User-Agent.
+    public String userAgent = null;
+    public int httpResponseCode = -1;
+    public Params(String url) {
+      this.url = url;
+    }
   }
 
 }

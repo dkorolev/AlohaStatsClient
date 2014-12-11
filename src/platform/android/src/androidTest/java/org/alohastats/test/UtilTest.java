@@ -28,7 +28,6 @@ import android.test.InstrumentationTestCase;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 
 public class UtilTest extends InstrumentationTestCase {
 
@@ -54,8 +53,7 @@ public class UtilTest extends InstrumentationTestCase {
       assertFalse(true);
     } catch (FileNotFoundException ex) {
       caughtException = true;
-    }
-    finally {
+    } finally {
       new File(invalidFileName).delete();
     }
     assertTrue(caughtException);

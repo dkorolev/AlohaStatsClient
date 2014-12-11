@@ -24,15 +24,16 @@
 
 package org.alohastats.lib;
 
-public class Statistics
-{
+public class Statistics {
   static {
     System.loadLibrary("alohastats");
     setupHttpTransport(BuildConfig.STATISTICS_URL, HttpTransport.class);
   }
+
   // Initialize C++ engine
   native static private void setupHttpTransport(String url, Class httpTransportClass);
 
   native static public void logEvent(String eventName);
+
   native static public void logEvent(String eventName, String eventValue);
 }
