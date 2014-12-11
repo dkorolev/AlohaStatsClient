@@ -32,7 +32,6 @@ import java.io.IOException;
 public class Util {
 
   public static String ReadFileAsUtf8String(String filePath) throws IOException {
-
     final File file = new File(filePath);
     final byte[] buffer = new byte[(int)file.length()];
     final FileInputStream istream = new FileInputStream(file);

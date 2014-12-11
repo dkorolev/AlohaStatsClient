@@ -35,7 +35,7 @@ import java.io.FileNotFoundException;
 public class HttpTransportTest extends InstrumentationTestCase {
 
   static {
-    // For faster unit testing on the real-world servers
+    // For faster unit testing on the real-world servers.
     HttpTransport.TIMEOUT_IN_MILLISECONDS = 3000;
   }
 
@@ -60,7 +60,7 @@ public class HttpTransportTest extends InstrumentationTestCase {
       assertNull(r.data);
       assertEquals("*****", Util.ReadFileAsUtf8String(p.outputFilePath));
     } finally {
-      new File(p.outputFilePath).delete();
+      (new File(p.outputFilePath)).delete();
     }
   }
 
@@ -89,7 +89,6 @@ public class HttpTransportTest extends InstrumentationTestCase {
     assertTrue(caughtException);
   }
 
-
   public void testPostFromInvalidFile() throws Exception {
     final HttpTransport.Params p = new HttpTransport.Params("http://httpbin.org/post");
     p.inputFilePath = getFullWritablePathForFile("this_file_should_not_exist");
@@ -109,13 +108,14 @@ public class HttpTransportTest extends InstrumentationTestCase {
     p.inputFilePath = getFullWritablePathForFile("some_input_test_file_for_http_post");
     p.contentType = "text/plain";
     try {
-      Util.WriteStringToFile(p.inputFilePath, p.inputFilePath); // Use file name as a test string for the post body.
+      // Use file name as a test string for the post body.
+      Util.WriteStringToFile(p.inputFilePath, p.inputFilePath);
       final HttpTransport.Params r = HttpTransport.Run(p);
       assertEquals(200, r.httpResponseCode);
       final String receivedBody = new String(p.data);
       assertTrue(receivedBody, -1 != receivedBody.indexOf(p.inputFilePath) );
     } finally {
-      new File(p.inputFilePath).delete();
+      (new File(p.inputFilePath)).delete();
     }
   }
 
@@ -132,7 +132,7 @@ public class HttpTransportTest extends InstrumentationTestCase {
       final String receivedBody = Util.ReadFileAsUtf8String(p.outputFilePath);
       assertTrue(receivedBody, -1 != receivedBody.indexOf(p.outputFilePath));
     } finally {
-      new File(p.outputFilePath).delete();
+      (new File(p.outputFilePath)).delete();
     }
   }
 
@@ -149,8 +149,8 @@ public class HttpTransportTest extends InstrumentationTestCase {
       final String receivedBody = Util.ReadFileAsUtf8String(p.outputFilePath);
       assertTrue(receivedBody, -1 != receivedBody.indexOf(postBodyToSend));
     } finally {
-      new File(p.inputFilePath).delete();
-      new File(p.outputFilePath).delete();
+      (new File(p.inputFilePath)).delete();
+      (new File(p.outputFilePath)).delete();
     }
   }
 
@@ -215,5 +215,19 @@ public class HttpTransportTest extends InstrumentationTestCase {
     assertTrue(caughtException);
   }
 
-  // TODO(AlexZ): Should we check zero-size input files?
+  public void testPostFromEmptyFileIntoMemory() throws Exception {
+    final HttpTransport.Params p = new HttpTransport.Params("http://httpbin.org/post");
+    p.inputFilePath = getFullWritablePathForFile("empty_input_test_file_for_http_post");
+    p.contentType = "text/plain";
+    try {
+      Util.WriteStringToFile("", p.inputFilePath);
+      final HttpTransport.Params r = HttpTransport.Run(p);
+      assertEquals(200, r.httpResponseCode);
+      final String receivedBody = new String(p.data);
+      assertTrue(receivedBody, -1 != receivedBody.indexOf("\"data\": \"\""));
+      assertTrue(receivedBody, -1 != receivedBody.indexOf("\"form\": {}"));
+    } finally {
+      (new File(p.inputFilePath)).delete();
+    }
+  }
 }

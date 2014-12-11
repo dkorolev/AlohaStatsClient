@@ -49,7 +49,7 @@ public class HttpTransport {
       this.url = url;
     }
     public String url = null;
-    // Can be different from url in case of redirects
+    // Can be different from url in case of redirects.
     public String receivedUrl = null;
     // SHOULD be specified for any POST request (any request where we send data to the server).
     public String contentType = null;
@@ -60,7 +60,7 @@ public class HttpTransport {
     public String inputFilePath = null;
     // Received data is stored here if not null or in data otherwise.
     public String outputFilePath = null;
-    // Optionally client can override HTTP User-Agent
+    // Optionally client can override default HTTP User-Agent.
     public String userAgent = null;
     public int httpResponseCode = -1;
   }
@@ -78,9 +78,10 @@ public class HttpTransport {
         connection.setRequestProperty("User-Agent", p.userAgent);
       }
       if (p.inputFilePath != null || p.data != null) {
-        // POST data to the server
-        if (p.contentType == null)
-          throw new NullPointerException("Please set Content-Type for POST requests");
+        // POST data to the server.
+        if (p.contentType == null) {
+          throw new NullPointerException("Please set Content-Type for POST requests.");
+        }
         connection.setRequestProperty("Content-Type", p.contentType);
         connection.setDoOutput(true);
         if (p.data != null) {
@@ -106,7 +107,8 @@ public class HttpTransport {
       // GET data from the server or receive POST response body
       p.httpResponseCode = connection.getResponseCode();
       p.receivedUrl = connection.getURL().toString();
-      // This implementation receives any data only if we have HTTP::OK (200)
+      // TODO(AlexZ): Validate Content-Length for received data, if provided.
+      // This implementation receives any data only if we have HTTP::OK (200).
       if (p.httpResponseCode == HttpURLConnection.HTTP_OK) {
         OutputStream ostream;
         if (p.outputFilePath != null) {
