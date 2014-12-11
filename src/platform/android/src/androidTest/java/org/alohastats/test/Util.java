@@ -22,18 +22,33 @@
  SOFTWARE.
  *******************************************************************************/
 
-package org.alohastats.lib;
+package org.alohastats.test;
 
-public class Statistics {
-  static {
-    System.loadLibrary("alohastats");
-    setupHttpTransport(BuildConfig.STATISTICS_URL, HttpTransport.class);
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
+public class Util {
+
+  public static String ReadFileAsUtf8String(String filePath) throws IOException {
+    final File file = new File(filePath);
+    final byte[] buffer = new byte[(int) file.length()];
+    final FileInputStream istream = new FileInputStream(file);
+    try {
+      istream.read(buffer);
+    } finally {
+      istream.close();
+    }
+    return new String(buffer, "UTF-8");
   }
 
-  // Initialize C++ engine
-  native static private void setupHttpTransport(String url, Class httpTransportClass);
-
-  native static public void logEvent(String eventName);
-
-  native static public void logEvent(String eventName, String eventValue);
+  public static void WriteStringToFile(String toWrite, String filePath) throws IOException {
+    final FileOutputStream ostream = new FileOutputStream(filePath);
+    try {
+      ostream.write(toWrite.getBytes());
+    } finally {
+      ostream.close();
+    }
+  }
 }
