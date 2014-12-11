@@ -24,63 +24,114 @@
 
 package org.alohastats.lib;
 
-import android.os.Build;
-import android.util.Log;
-
-import org.apache.http.util.ByteArrayBuffer;
-
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 public class HttpTransport {
 
-  // TODO: optimize if needed for bigger transfers from the server
-  private final static int REPLY_BUFFER_SIZE = 128;
+  // Globally accessible for faster unit-testing
+  public static int TIMEOUT_IN_MILLISECONDS = 30000;
+
+  // TODO(AlexZ): tune for larger files
+  private final static int STREAM_BUFFER_SIZE = 1024 * 8;
   private final static String TAG = "HttpTransport";
 
-  public static boolean postToDefaultUrl(final byte[] postBody)
-  {
-    return postToUrl(BuildConfig.STATISTICS_URL, postBody);
+  public static class Params {
+    public Params(String url) {
+      this.url = url;
+    }
+    public String url = null;
+    // Can be different from url in case of redirects
+    public String receivedUrl = null;
+    // SHOULD be specified for any POST request (any request where we send data to the server).
+    public String contentType = null;
+    // GET if null and inputFilePath is null.
+    // Sent in POST otherwise.
+    public byte[] data = null;
+    // Send from input file if specified instead of data.
+    public String inputFilePath = null;
+    // Received data is stored here if not null or in data otherwise.
+    public String outputFilePath = null;
+    // Optionally client can override HTTP User-Agent
+    public String userAgent = null;
+    public int httpResponseCode = -1;
   }
 
-  /**
-   * Synchronous blocking call to HTTP server, optimized for smaller (< 1M) data transfers.
-   */
-  public static boolean postToUrl(final String httpUrl, final byte[] postBody)
-  {
-    HttpURLConnection urlConnection = null;
-    final byte[] replyBuffer = new byte[REPLY_BUFFER_SIZE];
-    final ByteArrayBuffer fullReplyBody = new ByteArrayBuffer(REPLY_BUFFER_SIZE);
-
+  public static Params Run(final Params p) throws IOException, NullPointerException {
+    HttpURLConnection connection = null;
     try {
-      // Log.d(TAG, "Connecting to " + httpUrl);
-      urlConnection = (HttpURLConnection) new URL(httpUrl).openConnection();
-      urlConnection.setDoOutput(true);
-      urlConnection.getOutputStream().write(postBody);
-
-      int readBytesCount;
-      do {
-        readBytesCount = urlConnection.getInputStream().read(replyBuffer);
-        if (readBytesCount > 0)
-          fullReplyBody.append(replyBuffer, 0, replyBuffer.length);
-      } while (readBytesCount > 0);
-
-      final int httpCode = urlConnection.getResponseCode();
-      //Log.d(TAG, "Server replied with http code " + httpCode);
-      return 200 == httpCode;
+      connection = (HttpURLConnection) new URL(p.url).openConnection(); // NullPointerException, MalformedUrlException, IOException
+      // TODO(AlexZ): Customize redirects following in the future implementation for safer transfers.
+      connection.setFollowRedirects(true);
+      connection.setConnectTimeout(TIMEOUT_IN_MILLISECONDS);
+      connection.setReadTimeout(TIMEOUT_IN_MILLISECONDS);
+      connection.setUseCaches(false);
+      if (p.userAgent != null) {
+        connection.setRequestProperty("User-Agent", p.userAgent);
+      }
+      if (p.inputFilePath != null || p.data != null) {
+        // POST data to the server
+        if (p.contentType == null)
+          throw new NullPointerException("Please set Content-Type for POST requests");
+        connection.setRequestProperty("Content-Type", p.contentType);
+        connection.setDoOutput(true);
+        if (p.data != null) {
+          connection.setFixedLengthStreamingMode(p.data.length);
+          final OutputStream ostream = connection.getOutputStream();
+          ostream.write(p.data);
+          ostream.close(); // IOException
+        } else {
+          final File file = new File(p.inputFilePath);
+          assert(file.length() == (int)file.length());
+          connection.setFixedLengthStreamingMode((int)file.length());
+          final BufferedInputStream istream = new BufferedInputStream(new FileInputStream(file), STREAM_BUFFER_SIZE);
+          final BufferedOutputStream ostream = new BufferedOutputStream(connection.getOutputStream(), STREAM_BUFFER_SIZE);
+          final byte[] buffer = new byte[STREAM_BUFFER_SIZE];
+          int bytesRead;
+          while ((bytesRead = istream.read(buffer, 0, STREAM_BUFFER_SIZE)) > 0) {
+            ostream.write(buffer, 0, bytesRead);
+          }
+          istream.close(); // IOException
+          ostream.close(); // IOException
+        }
+      }
+      // GET data from the server or receive POST response body
+      p.httpResponseCode = connection.getResponseCode();
+      p.receivedUrl = connection.getURL().toString();
+      // This implementation receives any data only if we have HTTP::OK (200)
+      if (p.httpResponseCode == HttpURLConnection.HTTP_OK) {
+        OutputStream ostream;
+        if (p.outputFilePath != null) {
+          ostream = new BufferedOutputStream(new FileOutputStream(p.outputFilePath), STREAM_BUFFER_SIZE);
+        } else {
+          ostream = new ByteArrayOutputStream(STREAM_BUFFER_SIZE);
+        }
+        // TODO(AlexZ): Add HTTP resume support in the future for partially downloaded files
+        final BufferedInputStream istream = new BufferedInputStream(connection.getInputStream(), STREAM_BUFFER_SIZE);
+        final byte[] buffer = new byte[STREAM_BUFFER_SIZE];
+        int bytesRead;
+        while ((bytesRead = istream.read(buffer, 0, STREAM_BUFFER_SIZE)) > 0) {
+          ostream.write(buffer, 0, bytesRead);
+        }
+        istream.close(); // IOException
+        ostream.close(); // IOException
+        if (ostream.getClass().equals(ByteArrayOutputStream.class)) {
+          p.data = ((ByteArrayOutputStream)ostream).toByteArray();
+        }
+      }
+    } finally {
+      if (connection != null)
+        connection.disconnect();
     }
-    catch (MalformedURLException e) {
-      Log.e(TAG, e.getMessage());
-    }
-    catch (IOException e) {
-      Log.e(TAG, e.getMessage());
-    }
-    finally {
-      if (urlConnection != null)
-        urlConnection.disconnect();
-    }
-    return false;
+    return p;
   }
+
 }
