@@ -28,7 +28,7 @@ SOFTWARE.
 #include <string>
 #include <thread>
 
-#include "../bricks/net/api/api.h"
+#include "../bricks/net/api/types.h"
 
 namespace aloha {
 
@@ -55,7 +55,7 @@ class Stats {
 
  private:
   static void SimpleSampleHttpPost(const std::string& url, const std::string& post_data) {
-#ifndef BRICKS_ANDROID
+#if !defined(BRICKS_JAVA) && !defined(BRICKS_ANDROID)
     // TODO(dkorolev): This temporary stub function would not build on Android yet.
     using namespace bricks::net::api;
     HTTP(POST(url, post_data, "text/plain"));

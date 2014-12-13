@@ -22,12 +22,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 *******************************************************************************/
 
-#ifndef BRICKS_NET_API_IMPL_ANDROID_H
-#define BRICKS_NET_API_IMPL_ANDROID_H
+#ifndef BRICKS_NET_API_IMPL_JAVA_H
+#define BRICKS_NET_API_IMPL_JAVA_H
 
 #include "../../../port.h"
 
-#if defined(BRICKS_ANDROID)
+#if defined(BRICKS_JAVA) || defined(BRICKS_ANDROID)
 
 #include <jni.h>
 
@@ -39,6 +39,8 @@ SOFTWARE.
 #include "../../../util/make_scope_guard.h"
 
 using bricks::MakePointerScopeGuard;
+
+// TODO(dkorolev): Do this via a templated reinterpret_cast.
 
 #ifndef ANDROID
 #define PLATFORM_SPECIFIC_CAST (void**)
@@ -172,7 +174,7 @@ class HTTPClientPlatformWrapper {
   bool Go() {
     // Attaching multiple times from the same thread is a no-op, which only gets good env for us.
     JNIEnv* env;
-    if (JNI_OK != ::GetJVM()->AttachCurrentThread(PLATFORM_SPECIFIC_CAST & env, nullptr)) {
+    if (JNI_OK != ::GetJVM()->AttachCurrentThread(PLATFORM_SPECIFIC_CAST (& env), nullptr)) {
       // TODO(AlexZ): throw some critical exception.
       return false;
     }
@@ -387,8 +389,8 @@ struct ImplWrapper<aloha::HTTPClientPlatformWrapper> {
 
 }  // namespace api
 }  // namespace net
-}  // namespace bricke
+}  // namespace bricks
 
-#endif  // defined(BRICKS_ANDROID)
+#endif  // defined(BRICKS_JAVA)
 
 #endif  // BRICKS_NET_API_IMPL_ANDROID_H

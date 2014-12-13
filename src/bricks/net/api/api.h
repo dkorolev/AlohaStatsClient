@@ -16,8 +16,8 @@ bricks::net::api::HTTPClientImpl<bricks::net::api::HTTPClientPOSIX> HTTP;
 #elif defined(BRICKS_APPLE)
 #include "impl/apple.h"
 bricks::net::api::HTTPClientImpl<bricks::net::api::HTTPClientApple> HTTP;
-#elif defined(BRICKS_ANDROID)
-#include "impl/android.h"
+#elif defined(BRICKS_JAVA) || defined(BRICKS_ANDROID)
+#include "impl/java.h"
 bricks::net::api::HTTPClientImpl<aloha::HTTPClientPlatformWrapper> HTTP;
 #else
 #error "No implementation for `net/api/api.h` is available for your system."

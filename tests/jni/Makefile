@@ -1,7 +1,7 @@
 .PHONY: test all indent clean
 
-CPP = clang++
-CPPFLAGS = -std=c++11 -Wall -DBRICKS_ANDROID
+CPP = g++
+CPPFLAGS = -std=c++11 -Wall -DBRICKS_JAVA
 LDFLAGS =
 
 JNI_SRC =  ../../src/bricks/net/api/test.cc \
