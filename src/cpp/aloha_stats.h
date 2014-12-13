@@ -28,7 +28,7 @@ SOFTWARE.
 #include <string>
 #include <thread>
 
-#include "http_client.h"
+#include "../bricks/net/api/http_client.h"
 
 namespace aloha {
 
