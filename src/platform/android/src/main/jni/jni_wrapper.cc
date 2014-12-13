@@ -31,7 +31,7 @@ SOFTWARE.
 
 using bricks::MakePointerScopeGuard;
 
-#ifdef __APPLE__
+#ifndef ANDROID
 #define PLATFORM_SPECIFIC_CAST (void**)
 #else
 #define PLATFORM_SPECIFIC_CAST

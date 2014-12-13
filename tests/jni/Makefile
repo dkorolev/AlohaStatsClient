@@ -7,27 +7,33 @@ LDFLAGS =
 JNI_SRC = ../../src/platform/android/src/main/jni/jni_wrapper.cc \
           ../http_client_test.cc \
           JNITest.cc
-JNI_LIB = build/libalohastats.jnilib
 JAVA_SRC = @java.sources
 JAR_MANIFEST = build/manifest
-JAR = JNITest.jar
+JAR = build/JNITest.jar
 OS := $(shell uname)
 ifeq ($(OS),Darwin)
+  JNI_LIB = build/libalohastats.jnilib
   PATH_TO_SDK := $(shell xcodebuild -sdk macosx -version Path)
   CPPFLAGS += -I${PATH_TO_SDK}/System/Library/Frameworks/JavaVM.framework/Versions/A/Headers
   LDFLAGS += -dynamiclib -o ${JNI_LIB}
+else ifeq ($(OS),Linux)
+  export SHELL := /bin/bash
+  JNI_LIB = build/libalohastats.so
+  JNI_PATH := $(shell readlink -f $(shell which javac))
+  CPPFLAGS += -I$(dir ${JNI_PATH})../include -fPIC
+  LDFLAGS += -o ${JNI_LIB} -shared
 endif
 
 test: all
-	pushd build; java -jar ${JAR}; popd
+	java -Djava.library.path=build -jar ${JAR}
 
-all: build ${JNI_LIB} build/${JAR} #${BIN}
+all: build ${JNI_LIB} ${JAR}
 
 ${JAR_MANIFEST}:
 	echo Main-Class: org.alohastats.lib.JNITest > ${JAR_MANIFEST}
 
-build/${JAR}: build/java/org/alohastats/lib/JNITest.class ${JAR_MANIFEST}
-	jar cvfm build/${JAR} ${JAR_MANIFEST} -C build/java .
+${JAR}: build/java/org/alohastats/lib/JNITest.class ${JAR_MANIFEST}
+	jar cvfm ${JAR} ${JAR_MANIFEST} -C build/java .
 
 build/java/org/alohastats/lib/JNITest.class:
 	javac -d build/java @java.sources
