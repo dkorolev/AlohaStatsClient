@@ -28,7 +28,7 @@ SOFTWARE.
 #include <string>
 #include <thread>
 
-#include "../bricks/net/api/http_client.h"
+#include "../bricks/net/api/api.h"
 
 namespace aloha {
 
@@ -54,10 +54,13 @@ class Stats {
   }
 
  private:
-  // TODO(dkorolev): temporary stub function
   static void SimpleSampleHttpPost(const std::string& url, const std::string& post_data) {
-    HTTPClientPlatformWrapper(url).set_post_body(post_data, "text/plain").RunHTTPRequest();
-    HTTPClientPlatformWrapper(url).set_post_body(post_data + post_data, "text/plain").RunHTTPRequest();
+#ifndef BRICKS_ANDROID
+    // TODO(dkorolev): This temporary stub function would not build on Android yet.
+    using namespace bricks::net::api;
+    HTTP(POST(url, post_data, "text/plain"));
+    HTTP(POST(url, post_data + post_data, "text/plain"));
+#endif
   }
 };
 

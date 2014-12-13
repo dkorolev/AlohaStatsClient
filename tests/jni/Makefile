@@ -1,12 +1,12 @@
 .PHONY: test all indent clean
 
 CPP = clang++
-CPPFLAGS = -std=c++11 -Wall -DBRICKS_PLATFORM_ANDROID
+CPPFLAGS = -std=c++11 -Wall -DBRICKS_ANDROID
 LDFLAGS =
 
-JNI_SRC = ../../src/platform/android/src/main/jni/jni_wrapper.cc \
-          ../../src/bricks/net/api/test.cc \
+JNI_SRC =  ../../src/bricks/net/api/test.cc \
           JNITest.cc
+          # ../../src/platform/android/src/main/jni/jni_wrapper.cc
 JAVA_SRC = JNITest.java \
            ../../src/platform/android/src/main/java/org/alohastats/lib/Statistics.java \
            ../../src/platform/android/src/main/java/org/alohastats/lib/HttpTransport.java
@@ -27,7 +27,8 @@ else ifeq ($(OS),Linux)
 endif
 
 test: all
-	java -Djava.library.path=build -jar ${JAR}
+	# TODO(dkorolev): How to I pass a parameter here? :-)
+	java -Djava.library.path=build -jar ${JAR} --expected_arch=Android
 
 all: build ${JNI_LIB} ${JAR}
 

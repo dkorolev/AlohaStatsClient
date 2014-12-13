@@ -32,8 +32,13 @@
 
 #if defined(BRICKS_POSIX)
 #define BRICKS_ARCH_UNAME std::string("Linux")
+#define BRICKS_ARCH_UNAME_AS_IDENTIFIER Linux
 #elif defined(BRICKS_APPLE)
 #define BRICKS_ARCH_UNAME std::string("Darwin")
+#define BRICKS_ARCH_UNAME_AS_IDENTIFIER Darwin
+#elif defined(BRICKS_ANDROID)
+#define BRICKS_ARCH_UNAME std::string("Android")
+#define BRICKS_ARCH_UNAME_AS_IDENTIFIER Android
 #else
 #error "Unknown architecture."
 #endif

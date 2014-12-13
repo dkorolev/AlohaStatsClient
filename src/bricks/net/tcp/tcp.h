@@ -3,7 +3,7 @@
 
 #include "../../port.h"
 
-#if defined(BRICKS_POSIX) || defined(BRICKS_APPLE)
+#if defined(BRICKS_POSIX) || defined(BRICKS_APPLE) || defined(BRICKS_ANDROID)
 #include "impl/posix.h"
 #else
 #error "No implementation for `net/tcp.h` is available for your system."
