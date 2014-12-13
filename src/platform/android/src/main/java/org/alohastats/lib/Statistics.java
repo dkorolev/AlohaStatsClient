@@ -27,11 +27,15 @@ package org.alohastats.lib;
 public class Statistics {
   static {
     System.loadLibrary("alohastats");
-    setupHttpTransport(BuildConfig.STATISTICS_URL, HttpTransport.class);
   }
-
   // Initialize C++ engine
-  native static private void setupHttpTransport(String url, Class httpTransportClass);
+  native static private void setupCPP(final Class httpTransportClass, final String serverUrl, final String storagePath);
+
+  static public void setup(final String serverUrl, String storagePath) {
+    if (!storagePath.endsWith("/"))
+      storagePath += "/";
+    setupCPP(HttpTransport.class, serverUrl, storagePath);
+  }
 
   native static public void logEvent(String eventName);
 

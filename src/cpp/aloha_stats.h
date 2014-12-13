@@ -1,5 +1,5 @@
-// TODO (dkorolev) add header guards when header's name and location become stable.
-#pragma once
+#ifndef ALOHA_STATS_H
+#define ALOHA_STATS_H
 
 /*******************************************************************************
 The MIT License (MIT)
@@ -27,7 +27,6 @@ SOFTWARE.
 
 #include <string>
 #include <thread>
-#include <iostream>
 
 #include "http_client.h"
 
@@ -35,27 +34,33 @@ namespace aloha {
 
 class Stats {
   std::string statistics_server_url_;
+  std::string storage_path_;
 
  public:
-  Stats(std::string const& statistics_server_url) : statistics_server_url_(statistics_server_url) {
+  Stats(std::string const& statistics_server_url, std::string const& storage_path_with_a_slash_at_the_end)
+      : statistics_server_url_(statistics_server_url), storage_path_(storage_path_with_a_slash_at_the_end) {
   }
 
   bool LogEvent(std::string const& event_name) const {
+    // TODO(dkorolev): Insert real message queue + cereal here.
     std::thread(&SimpleSampleHttpPost, statistics_server_url_, event_name).detach();
+    return true;
   }
 
   bool LogEvent(std::string const& event_name, std::string const& event_value) const {
+    // TODO(dkorolev): Insert real message queue + cereal here.
     std::thread(&SimpleSampleHttpPost, statistics_server_url_, event_name + "=" + event_value).detach();
+    return true;
   }
 
  private:
-  // TODO temporary stub function
+  // TODO(dkorolev): temporary stub function
   static void SimpleSampleHttpPost(const std::string& url, const std::string& post_data) {
-    if (!HttpClient(url).set_post_body(post_data, "text/plain").Connect())
-      std::cerr << "Error while sending data to the server " << url << std::endl;
+    HTTPClientPlatformWrapper(url).set_post_body(post_data, "text/plain").RunHTTPRequest();
+    HTTPClientPlatformWrapper(url).set_post_body(post_data + post_data, "text/plain").RunHTTPRequest();
   }
 };
 
-std::string HelloWorld();
-
 }  // namespace aloha
+
+#endif  // #ifndef ALOHA_STATS_H

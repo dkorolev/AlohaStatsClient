@@ -21,19 +21,19 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 *******************************************************************************/
+package org.alohastats.lib;
 
-#include "http_client.h"
-#include <jni.h>
+import org.alohastats.lib.Statistics;
 
-// This function should be provided by JNI wrapper
-extern JavaVM* GetJVM();
 
-namespace aloha {
+// This is simple Java command-line launcher for C++ unit-tests.
+// It's main goal is to test Android Java code from desktop command line.
+class JNITest {
 
-bool HTTPClientPlatformWrapper::Connect() {
-  // TODO (AlexZ) Add correct JNI implementation
-  JavaVM* jvm = GetJVM();
-  return false;
+  private static native void runTests();
+
+  public static void main(String[] args) {
+    Statistics.setup("http://test.alex.bio/upload", "");
+    runTests();
+  }
 }
-
-}  // namespace aloha
