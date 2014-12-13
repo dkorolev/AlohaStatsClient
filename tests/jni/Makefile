@@ -1,7 +1,7 @@
 .PHONY: test all indent clean
 
 CPP = clang++
-CPPFLAGS = -std=c++11 -Wall
+CPPFLAGS = -std=c++11 -Wall -DBRICKS_PLATFORM_ANDROID
 LDFLAGS =
 
 JNI_SRC = ../../src/platform/android/src/main/jni/jni_wrapper.cc \
