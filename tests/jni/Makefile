@@ -27,8 +27,7 @@ else ifeq ($(OS),Linux)
 endif
 
 test: all
-	# TODO(dkorolev): How to I pass a parameter here? :-)
-	java -Djava.library.path=build -jar ${JAR} --expected_arch=Android
+	java -Djava.library.path=build -jar ${JAR}
 
 all: build ${JNI_LIB} ${JAR}
 
@@ -53,5 +52,5 @@ build: build/java
 build/java:
 	mkdir -p $@
 
-${JNI_LIB}:
+${JNI_LIB}: ${JNI_SRC}
 	${CPP} ${CPPFLAGS} ${JNI_SRC} ${LDFLAGS}

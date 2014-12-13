@@ -32,8 +32,8 @@ extern "C" {
 // The purpose of this wrapper function is simple:
 // launch gflags unit tests from another module.
 JNIEXPORT void JNICALL Java_org_alohastats_lib_JNITest_runTests(JNIEnv*, jclass) {
-  const char* cmd_line[] = {"http_client_test_jni"};
-  (void)main(1, const_cast<char**>(cmd_line));
+  const char* cmd_line[] = {"http_client_test_jni", "--expected_arch", "Android"};
+  (void)main(3, const_cast<char**>(cmd_line));
 }
 
 }  // extern "C"
