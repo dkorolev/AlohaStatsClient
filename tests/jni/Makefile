@@ -5,7 +5,7 @@ CPPFLAGS = -std=c++11 -Wall -DBRICKS_PLATFORM_ANDROID
 LDFLAGS =
 
 JNI_SRC = ../../src/platform/android/src/main/jni/jni_wrapper.cc \
-          ../../src/bricks/net/api/http_client_test.cc \
+          ../../src/bricks/net/api/test.cc \
           JNITest.cc
 JAVA_SRC = JNITest.java \
            ../../src/platform/android/src/main/java/org/alohastats/lib/Statistics.java \
