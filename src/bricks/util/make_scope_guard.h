@@ -1,5 +1,5 @@
-// TODO (dkorolev) replace with #ifdef when final file name/location will be decided
-#pragma once
+#ifndef BRICKS_UTIL_MAKE_SCOPED_GUARD_H
+#define BRICKS_UTIL_MAKE_SCOPED_GUARD_H
 
 /*******************************************************************************
 The MIT License (MIT)
@@ -57,3 +57,5 @@ ScopeGuard<F> MakeScopeGuard(F f) {
 }
 
 }  // namespace bricks
+
+#endif  // BRICKS_UTIL_MAKE_SCOPED_GUARD_H
