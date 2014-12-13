@@ -125,8 +125,10 @@ class HTTPClientPlatformWrapper {
 
 }  // namespace aloha
 
-//#if defined(__APPLE__)
-//#include "http_client_apple.mm"
+#if !defined(BRICKS_PLATFORM_ANDROID)
+#if defined(__APPLE__)
+#include "http_client_apple.mm"
 //#elif defined(ANDROID)
 //#include "http_client_android.cc"
-//#endif
+#endif
+#endif

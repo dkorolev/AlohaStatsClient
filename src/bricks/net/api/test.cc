@@ -6,17 +6,17 @@
 #include <thread>
 #include <functional>
 
-#include "../src/cpp/http_client.h"
+#include "http_client.h"
 
-#include "../src/bricks/make_scope_guard.h"
-#include "../src/bricks/read_file_as_string.h"
+#include "../../make_scope_guard.h"
+#include "../../read_file_as_string.h"
 
-#include "../src/bricks/net/posix_http_server.h"  // TODO(dkorolev): Structure `bricks`, I know how!
+#include "../posix_http_server.h"
 
-#include "../src/bricks/dflags/dflags.h"
+#include "../../dflags/dflags.h"
 
-#include "../3party/gtest/gtest.h"
-#include "../3party/gtest/gtest-main.h"
+#include "../../../../3party/gtest/gtest.h"
+#include "../../../../3party/gtest/gtest-main.h"
 
 using std::cout;
 using std::endl;

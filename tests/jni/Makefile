@@ -1,13 +1,15 @@
 .PHONY: test all indent clean
 
 CPP = clang++
-CPPFLAGS = -std=c++11 -Wall
+CPPFLAGS = -std=c++11 -Wall -DBRICKS_PLATFORM_ANDROID
 LDFLAGS =
 
 JNI_SRC = ../../src/platform/android/src/main/jni/jni_wrapper.cc \
-          ../http_client_test.cc \
+          ../../src/bricks/net/api/test.cc \
           JNITest.cc
-JAVA_SRC = @java.sources
+JAVA_SRC = JNITest.java \
+           ../../src/platform/android/src/main/java/org/alohastats/lib/Statistics.java \
+           ../../src/platform/android/src/main/java/org/alohastats/lib/HttpTransport.java
 JAR_MANIFEST = build/manifest
 JAR = build/JNITest.jar
 OS := $(shell uname)
@@ -35,8 +37,8 @@ ${JAR_MANIFEST}:
 ${JAR}: build/java/org/alohastats/lib/JNITest.class ${JAR_MANIFEST}
 	jar cvfm ${JAR} ${JAR_MANIFEST} -C build/java .
 
-build/java/org/alohastats/lib/JNITest.class:
-	javac -d build/java @java.sources
+build/java/org/alohastats/lib/JNITest.class: ${JAVA_SRC}
+	javac -d build/java ${JAVA_SRC}
 
 indent:
 	(find . -name "*.cc" ; find . -name "*.h") | xargs clang-format-3.5 -i

@@ -4,12 +4,12 @@ CPP = clang++
 CPPFLAGS = -std=c++11 -Wall
 LDFLAGS = -pthread
 
-SRC=$(wildcard *.cc)
-BIN = $(SRC:%.cc=build/%)
+SRC=../src/bricks/net/api/test.cc
+BIN = build/test
 OS := $(shell uname)
 ifeq ($(OS),Darwin)
   CPPFLAGS += -x objective-c++ -fobjc-arc
-  LDFLAGS += ../src/cpp/http_client_apple.mm -framework Foundation
+  LDFLAGS += -framework Foundation
 endif
 
 test: all
@@ -26,5 +26,5 @@ clean:
 build:
 	mkdir -p $@
 
-build/%: %.cc #*.h
+${BIN}: ${SRC}
 	${CPP} ${CPPFLAGS} -o $@ $< ${LDFLAGS}
