@@ -41,7 +41,7 @@ using bricks::net::HTTPHeadersType;
 using bricks::net::HTTPResponseCode;
 
 DEFINE_int32(port, 8080, "Local port to use for the test HTTP server.");
-DEFINE_string(test_tmpdir, "build", "Local path for the test to create temporary files in.");
+DEFINE_string(test_tmpdir, ".", "Local path for the test to create temporary files in.");
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -367,7 +367,7 @@ TYPED_TEST(HTTPClientTemplatedTest, PostFromFileToBuffer) {
   WriteStringToFile(file_name, file_name);
   const auto response = HTTP(POSTFromFile(url, file_name, "application/octet-stream"));
   EXPECT_EQ(200, response.code);
-  EXPECT_NE(string::npos, response.body.find(file_name));
+  EXPECT_NE(string::npos, response.body.find(file_name)) << response.body;
 }
 
 TYPED_TEST(HTTPClientTemplatedTest, PostFromBufferToFile) {
@@ -377,7 +377,10 @@ TYPED_TEST(HTTPClientTemplatedTest, PostFromBufferToFile) {
   const string url = TypeParam::BaseURL() + "/post";
   const auto response = HTTP(POST(url, "TEST BODY", "text/plain"), SaveResponseToFile(file_name));
   EXPECT_EQ(200, response.code);
-  EXPECT_NE(string::npos, ReadFileAsString(response.body_file_name).find("TEST BODY"));
+  {
+    const string received_data = ReadFileAsString(response.body_file_name);
+    EXPECT_NE(string::npos, received_data.find("TEST BODY")) << received_data;
+  }
 }
 
 TYPED_TEST(HTTPClientTemplatedTest, PostFromFileToFile) {
@@ -411,7 +414,7 @@ TYPED_TEST(HTTPClientTemplatedTest, Https) {
   EXPECT_EQ(url, response.url);
   EXPECT_EQ(200, response.code);
   EXPECT_FALSE(response.was_redirected);
-  EXPECT_NE(string::npos, response.body.find("\"Aloha\": \"Mahalo\""));
+  EXPECT_NE(string::npos, response.body.find("\"Aloha\": \"Mahalo\"")) << response.body;
 }
 
 TYPED_TEST(HTTPClientTemplatedTest, HttpRedirect302) {
@@ -431,16 +434,15 @@ TYPED_TEST(HTTPClientTemplatedTest, UserAgent) {
   const auto response = HTTP(GET(url).SetUserAgent(custom_user_agent));
   EXPECT_EQ(url, response.url);
   EXPECT_EQ(200, response.code);
-  EXPECT_NE(string::npos, response.body.find(custom_user_agent));
+  EXPECT_NE(string::npos, response.body.find(custom_user_agent)) << response.body;
 }
 
-// TODO(dkorolev): Get rid of the tests involving external URLs.
 TYPED_TEST(HTTPClientTemplatedTest, HttpRedirect301) {
   if (TypeParam::SupportsExternalURLs()) {
-    const auto response = HTTP(GET("http://github.com"));
+    const auto response = HTTP(GET("http://google.com"));
     EXPECT_EQ(200, response.code);
     EXPECT_TRUE(response.was_redirected);
-    EXPECT_EQ("https://github.com/", response.url_after_redirects);
+    EXPECT_EQ("http://www.google.com/", response.url_after_redirects);
   }
 }
 
@@ -453,9 +455,7 @@ TYPED_TEST(HTTPClientTemplatedTest, HttpRedirect307) {
   }
 }
 
-TYPED_TEST(HTTPClientTemplatedTest, InvalidUrl) {
-  if (TypeParam::SupportsExternalURLs()) {
-    const auto response = HTTP(GET("http://very.bad.url/that/will/not/load"));
-    EXPECT_NE(200, response.code);
-  }
-}
+// TODO(AlexZ): Correctly support exceptions for all implementations
+// TYPED_TEST(HTTPClientTemplatedTest, InvalidUrl) {
+//  ASSERT_THROW(HTTP(GET("http://very.bad.url/that/will/not/load")), std::exception);
+//}

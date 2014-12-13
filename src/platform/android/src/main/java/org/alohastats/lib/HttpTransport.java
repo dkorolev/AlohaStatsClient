@@ -38,12 +38,12 @@ import java.net.URL;
 public class HttpTransport {
 
   // TODO(AlexZ): tune for larger files
-  private final static int STREAM_BUFFER_SIZE = 1024 * 8;
+  private final static int STREAM_BUFFER_SIZE = 1024 * 64;
   private final static String TAG = "HttpTransport";
   // Globally accessible for faster unit-testing
   public static int TIMEOUT_IN_MILLISECONDS = 30000;
 
-  public static Params Run(final Params p) throws IOException, NullPointerException {
+  public static Params run(final Params p) throws IOException, NullPointerException {
     HttpURLConnection connection = null;
     try {
       connection = (HttpURLConnection) new URL(p.url).openConnection(); // NullPointerException, MalformedUrlException, IOException
@@ -85,7 +85,7 @@ public class HttpTransport {
       // GET data from the server or receive POST response body
       p.httpResponseCode = connection.getResponseCode();
       p.receivedUrl = connection.getURL().toString();
-      // TODO(AlexZ): Validate Content-Length for received data, if provided.
+      p.contentType = connection.getContentType();
       // This implementation receives any data only if we have HTTP::OK (200).
       if (p.httpResponseCode == HttpURLConnection.HTTP_OK) {
         OutputStream ostream;
@@ -97,9 +97,24 @@ public class HttpTransport {
         // TODO(AlexZ): Add HTTP resume support in the future for partially downloaded files
         final BufferedInputStream istream = new BufferedInputStream(connection.getInputStream(), STREAM_BUFFER_SIZE);
         final byte[] buffer = new byte[STREAM_BUFFER_SIZE];
+        // gzip encoding is transparently enabled and we can't use Content-Length for
+        // body reading if server has gzipped it.
+        final String encoding = connection.getContentEncoding();
+        int bytesExpected = (encoding != null && encoding.equalsIgnoreCase("gzip")) ? -1 : connection.getContentLength();
         int bytesRead;
         while ((bytesRead = istream.read(buffer, 0, STREAM_BUFFER_SIZE)) > 0) {
-          ostream.write(buffer, 0, bytesRead);
+          if (bytesExpected == -1) {
+            // Read everything if Content-Length is not known in advance.
+            ostream.write(buffer, 0, bytesRead);
+          } else {
+            // Read only up-to Content-Length (sometimes servers/proxies add garbage at the end).
+            if (bytesExpected < bytesRead) {
+              ostream.write(buffer, 0, bytesExpected);
+              break;
+            }
+            ostream.write(buffer, 0, bytesRead);
+            bytesExpected -= bytesRead;
+          }
         }
         istream.close(); // IOException
         ostream.close(); // IOException
@@ -119,6 +134,7 @@ public class HttpTransport {
     // Can be different from url in case of redirects.
     public String receivedUrl = null;
     // SHOULD be specified for any POST request (any request where we send data to the server).
+    // On return, contains received Content-Type
     public String contentType = null;
     // GET if null and inputFilePath is null.
     // Sent in POST otherwise.
@@ -134,5 +150,6 @@ public class HttpTransport {
       this.url = url;
     }
   }
+
 
 }

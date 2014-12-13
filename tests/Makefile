@@ -9,7 +9,7 @@ BIN = $(SRC:%.cc=build/%)
 OS := $(shell uname)
 ifeq ($(OS),Darwin)
   CPPFLAGS += -x objective-c++ -fobjc-arc
-  LDFLAGS += -framework Foundation
+  LDFLAGS += ../src/cpp/http_client_apple.mm -framework Foundation
 endif
 
 test: all

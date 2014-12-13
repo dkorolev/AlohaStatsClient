@@ -17,9 +17,7 @@ android {
     ndk {
       moduleName "alohastats"
       stl "c++_static"
-      ldLibs "log" , "atomic"
+      ldLibs "log"
     }
-    // Please set your statistics URL in gradle.properties file in your project
-    buildConfigField 'String',  'STATISTICS_URL',      propertyStatisticsUrl
   }
 }

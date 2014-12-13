@@ -35,11 +35,15 @@ import org.alohastats.lib.Statistics;
 
 public class MainActivity extends Activity
 {
+  private static final String STATISTICS_SERVER_URL = "http://httpbin.org/post";
+
   @Override
   protected void onCreate(Bundle savedInstanceState)
   {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
+
+    Statistics.setup(STATISTICS_SERVER_URL, getFilesDir().getAbsolutePath());
 
     // To handle Enter key for convenience testing on emulator
     findViewById(R.id.eventNameEditor).setOnKeyListener(new View.OnKeyListener()
