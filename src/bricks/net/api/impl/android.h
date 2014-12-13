@@ -165,45 +165,6 @@ class HTTPClientPlatformWrapper {
   }
   HTTPClientPlatformWrapper(const std::string& url) : url_requested_(url), error_code_(kNotInitialized) {
   }
-  /*
-  HTTPClientPlatformWrapper& set_url_requested(const std::string& url) {
-    url_requested_ = url;
-    return *this;
-  }
-  // This method is mutually exclusive with set_post_body().
-  HTTPClientPlatformWrapper& set_post_file(const std::string& post_file, const std::string& content_type) {
-    post_file_ = post_file;
-    content_type_ = content_type;
-    // TODO (dkorolev) replace with exceptions as discussed offline.
-    assert(post_body_.empty());
-    return *this;
-  }
-  // If set, stores server reply in file specified.
-  HTTPClientPlatformWrapper& set_received_file(const std::string& received_file) {
-    received_file_ = received_file;
-    return *this;
-  }
-  HTTPClientPlatformWrapper& set_user_agent(const std::string& user_agent) {
-    user_agent_ = user_agent;
-    return *this;
-  }
-  // This method is mutually exclusive with set_post_file().
-  HTTPClientPlatformWrapper& set_post_body(const std::string& post_body, const std::string& content_type) {
-    post_body_ = post_body;
-    content_type_ = content_type;
-    // TODO (dkorolev) replace with exceptions as discussed offline.
-    assert(post_file_.empty());
-    return *this;
-  }
-  // Move version to avoid string copying.
-  // This method is mutually exclusive with set_post_file().
-  HTTPClientPlatformWrapper& set_post_body(std::string&& post_body, const std::string& content_type) {
-    post_body_ = post_body;
-    post_file_.clear();
-    content_type_ = content_type;
-    return *this;
-  }
-  */
 
   // Synchronous (blocking) call, should be implemented for each platform
   // @returns true only if server answered with HTTP 200 OK
