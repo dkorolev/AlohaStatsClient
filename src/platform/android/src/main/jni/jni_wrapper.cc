@@ -42,7 +42,7 @@ namespace {
 static std::unique_ptr<aloha::Stats> g_stats;
 
 static JavaVM* g_jvm = 0;
-// Cached classs and methods for faster access from native code
+// Cached class and methods for faster access from native code
 static jclass g_httpTransportClass = 0;
 static jmethodID g_httpTransportClass_run = 0;
 static jclass g_httpParamsClass = 0;
