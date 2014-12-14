@@ -163,7 +163,12 @@ struct HTTPClientImpl {
     IMPL_HELPER::PrepareInput(request_params, impl);
     IMPL_HELPER::PrepareInput(response_params, impl);
     if (!impl.Go()) {
+#ifndef ANDROID
       throw HTTPClientException();
+#else
+      // TODO(dkorolev): Chat with Alex. We can overcome the exception here, but should we?
+      return typename ResponseTypeFromRequestType<T_RESPONSE_PARAMS>::T_RESPONSE_TYPE();
+#endif
     }
     typename ResponseTypeFromRequestType<T_RESPONSE_PARAMS>::T_RESPONSE_TYPE output;
     IMPL_HELPER::ParseOutput(request_params, response_params, impl, output);

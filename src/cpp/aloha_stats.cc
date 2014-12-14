@@ -40,6 +40,7 @@ JNIEXPORT void JNICALL Java_org_alohastats_lib_Statistics_setupCPP(JNIEnv* env,
 
 JNIEXPORT bool JNICALL
     Java_org_alohastats_lib_Statistics_logEvent__Ljava_lang_String_2(JNIEnv* env, jclass, jstring eventName) {
+  using bricks::java_wrapper::ToStdString;
   return g_stats->LogEvent(ToStdString(env, eventName));
 }
 
@@ -48,6 +49,7 @@ JNIEXPORT bool JNICALL
                                                                                         jclass,
                                                                                         jstring eventName,
                                                                                         jstring eventValue) {
+  using bricks::java_wrapper::ToStdString;
   return g_stats->LogEvent(ToStdString(env, eventName), ToStdString(env, eventValue));
 }
 
