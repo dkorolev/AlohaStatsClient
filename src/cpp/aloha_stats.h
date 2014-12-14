@@ -28,7 +28,7 @@ SOFTWARE.
 #include <string>
 #include <thread>
 
-#include "../bricks/net/api/http_client.h"
+#include "../bricks/net/api/api.h"
 
 namespace aloha {
 
@@ -54,10 +54,9 @@ class Stats {
   }
 
  private:
-  // TODO(dkorolev): temporary stub function
   static void SimpleSampleHttpPost(const std::string& url, const std::string& post_data) {
-    HTTPClientPlatformWrapper(url).set_post_body(post_data, "text/plain").RunHTTPRequest();
-    HTTPClientPlatformWrapper(url).set_post_body(post_data + post_data, "text/plain").RunHTTPRequest();
+    using namespace bricks::net::api;
+    HTTP(POST(url, post_data, "text/plain"));
   }
 };
 

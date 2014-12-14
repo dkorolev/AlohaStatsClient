@@ -22,8 +22,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 *******************************************************************************/
 
+#include "../../../port.h"
+
+#if defined(BRICKS_APPLE)
+
 #if ! __has_feature(objc_arc)
-#error This file must be compiled with ARC. Either turn on ARC for the project or use -fobjc-arc flag
+#error "This file must be compiled with ARC. Either turn on ARC for the project or use -fobjc-arc flag."
 #endif
 
 #import <Foundation/NSString.h>
@@ -36,35 +40,30 @@ SOFTWARE.
 #import <Foundation/NSError.h>
 #import <Foundation/NSFileManager.h>
 
-#include "http_client.h"
-
-
 #define TIMEOUT_IN_SECONDS 30.0
 
-namespace aloha {
-
-bool HTTPClientPlatformWrapper::RunHTTPRequest() {
+bool bricks::net::api::HTTPClientApple::Go() {
   @autoreleasepool {
 
     NSMutableURLRequest * request = [NSMutableURLRequest requestWithURL:
-        [NSURL URLWithString:[NSString stringWithUTF8String:url_requested_.c_str()]]
+        [NSURL URLWithString:[NSString stringWithUTF8String:url_requested.c_str()]]
         cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:TIMEOUT_IN_SECONDS];
 
-    if (!content_type_.empty())
-      [request setValue:[NSString stringWithUTF8String:content_type_.c_str()] forHTTPHeaderField:@"Content-Type"];
-    if (!user_agent_.empty())
-      [request setValue:[NSString stringWithUTF8String:user_agent_.c_str()] forHTTPHeaderField:@"User-Agent"];
+    if (!content_type.empty())
+      [request setValue:[NSString stringWithUTF8String:content_type.c_str()] forHTTPHeaderField:@"Content-Type"];
+    if (!user_agent.empty())
+      [request setValue:[NSString stringWithUTF8String:user_agent.c_str()] forHTTPHeaderField:@"User-Agent"];
 
-    if (!post_body_.empty()) {
-      request.HTTPBody = [NSData dataWithBytes:post_body_.data() length:post_body_.size()];
+    if (!post_body.empty()) {
+      request.HTTPBody = [NSData dataWithBytes:post_body.data() length:post_body.size()];
       request.HTTPMethod = @"POST";
-    } else if (!post_file_.empty()) {
+    } else if (!post_file.empty()) {
       NSError * err = nil;
-      NSString * path = [NSString stringWithUTF8String:post_file_.c_str()];
+      NSString * path = [NSString stringWithUTF8String:post_file.c_str()];
       const unsigned long long file_size = [[NSFileManager defaultManager] attributesOfItemAtPath:path error:&err].fileSize;
       if (err) {
-        error_code_ = err.code;
-        NSLog(@"Error %d %@", error_code_, err.localizedDescription);
+        error_code = err.code;
+        NSLog(@"Error %d %@", error_code, err.localizedDescription);
         return false;
       }
       request.HTTPBodyStream = [NSInputStream inputStreamWithFileAtPath:path];
@@ -77,23 +76,26 @@ bool HTTPClientPlatformWrapper::RunHTTPRequest() {
     NSData * url_data = [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:&err];
 
     if (response) {
-      error_code_ = response.statusCode;
-      url_received_ = [response.URL.absoluteString UTF8String];
+      error_code = response.statusCode;
+      url_received = [response.URL.absoluteString UTF8String];
     }
     else {
-      error_code_ = err.code;
-      NSLog(@"ERROR while connecting to %s: %@", url_requested_.c_str(), err.localizedDescription);
+      error_code = err.code;
+      NSLog(@"ERROR while connecting to %s: %@", url_requested.c_str(), err.localizedDescription);
     }
 
     if (url_data) {
-      if (received_file_.empty())
-        server_response_.assign(reinterpret_cast<char const *>(url_data.bytes), url_data.length);
-      else
-        [url_data writeToFile:[NSString stringWithUTF8String:received_file_.c_str()] atomically:YES];
+      if (received_file.empty()) {
+        server_response.assign(reinterpret_cast<char const *>(url_data.bytes), url_data.length);
+      } else {
+        if (![url_data writeToFile:[NSString stringWithUTF8String:received_file.c_str()] atomically:YES]) {
+          return false;
+        }
+      }
     }
-    return true;  // TODO(dkorolev) + TODO(deathbaba): Figure out something smarter than return (200 == error_code_);
+    return true;  // TODO(dkorolev) + TODO(deathbaba): Figure out something smarter than return (200 == error_code);
 
   } // @autoreleasepool
 }
 
-} // namespace aloha
+#endif  // defined(BRICKS_APPLE)

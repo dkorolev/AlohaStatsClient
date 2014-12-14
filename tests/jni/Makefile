@@ -1,12 +1,17 @@
 .PHONY: test all indent clean
 
-CPP = clang++
-CPPFLAGS = -std=c++11 -Wall -DBRICKS_PLATFORM_ANDROID
+CPP = g++
+CPPFLAGS = -std=c++11 -Wall -DBRICKS_JAVA
 LDFLAGS =
 
-JNI_SRC = ../../src/platform/android/src/main/jni/jni_wrapper.cc \
-          ../../src/bricks/net/api/test.cc \
-          JNITest.cc
+# Option 1: Explicitly link against ../../src/bricks/java_wrapper/java_wrapper.cc.
+# JNI_SRC = JNITest.cc  ../../src/bricks/net/api/test.cc  ../../src/bricks/java_wrapper/java_wrapper.cc
+
+# Option 2: Use the configuration with a single C++ file and add -DLINK_JAVA_ON_LOAD_INTO_SOURCE
+#           (In this particular example case, JNITest.cc will #include "test.cc" when this -D is set.)
+CPPFLAGS += -DLINK_JAVA_ON_LOAD_INTO_SOURCE
+JNI_SRC = JNITest.cc
+
 JAVA_SRC = JNITest.java \
            ../../src/platform/android/src/main/java/org/alohastats/lib/Statistics.java \
            ../../src/platform/android/src/main/java/org/alohastats/lib/HttpTransport.java
@@ -52,5 +57,5 @@ build: build/java
 build/java:
 	mkdir -p $@
 
-${JNI_LIB}:
+${JNI_LIB}: ${JNI_SRC}
 	${CPP} ${CPPFLAGS} ${JNI_SRC} ${LDFLAGS}
