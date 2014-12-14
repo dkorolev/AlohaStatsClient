@@ -1,1 +1,1 @@
-#include "../../../../../bricks/net/api/impl/java.h"
+#include "../../../../../bricks/java_wrapper/java_wrapper.cc"

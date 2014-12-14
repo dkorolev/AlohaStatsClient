@@ -4,7 +4,7 @@ CPP = g++
 CPPFLAGS = -std=c++11 -Wall
 LDFLAGS = -pthread
 
-SRC=../src/bricks/net/api/test.cc
+SRC=test.cc
 BIN = build/test
 OS := $(shell uname)
 ifeq ($(OS),Darwin)

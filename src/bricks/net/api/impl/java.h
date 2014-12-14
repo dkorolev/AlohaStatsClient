@@ -2,6 +2,7 @@
 The MIT License (MIT)
 
 Copyright (c) 2014 Alexander Zolotarev <me@alex.bio> from Minsk, Belarus
+                   Dmitry "Dima" Korolev <dmitry.korolev@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,110 +30,12 @@ SOFTWARE.
 
 #if defined(BRICKS_JAVA) || defined(BRICKS_ANDROID)
 
-#include <jni.h>
-
-#include <cassert>
-#include <memory>
-#include <string>
-
-#include "../../../../cpp/aloha_stats.h"
+#include "../../../java_wrapper/java_wrapper.h"
 #include "../../../util/make_scope_guard.h"
 
-using bricks::MakePointerScopeGuard;
+#include <jni.h>
 
-// TODO(dkorolev): Do this via a templated reinterpret_cast.
-
-#ifndef ANDROID
-#define PLATFORM_SPECIFIC_CAST (void**)
-#else
-#define PLATFORM_SPECIFIC_CAST
-#endif
-
-namespace {
-
-static std::unique_ptr<aloha::Stats> g_stats;
-
-static JavaVM* g_jvm = 0;
-// Cached class and methods for faster access from native code
-static jclass g_httpTransportClass = 0;
-static jmethodID g_httpTransportClass_run = 0;
-static jclass g_httpParamsClass = 0;
-static jmethodID g_httpParamsConstructor = 0;
-
-// JNI helper functions
-std::string ToStdString(JNIEnv* env, jstring str) {
-  std::string result;
-  char const* utfBuffer = env->GetStringUTFChars(str, 0);
-  if (utfBuffer) {
-    result = utfBuffer;
-    env->ReleaseStringUTFChars(str, utfBuffer);
-  }
-  return result;
-}
-
-}  // namespace
-
-// Exported for access from C++ code
-extern JavaVM* GetJVM() {
-  return g_jvm;
-}
-
-extern "C" {
-JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void*) {
-  g_jvm = vm;
-  return JNI_VERSION_1_6;
-}
-
-JNIEXPORT bool JNICALL
-    Java_org_alohastats_lib_Statistics_logEvent__Ljava_lang_String_2(JNIEnv* env, jclass, jstring eventName) {
-  return g_stats->LogEvent(ToStdString(env, eventName));
-}
-
-JNIEXPORT bool JNICALL
-    Java_org_alohastats_lib_Statistics_logEvent__Ljava_lang_String_2Ljava_lang_String_2(JNIEnv* env,
-                                                                                        jclass,
-                                                                                        jstring eventName,
-                                                                                        jstring eventValue) {
-  return g_stats->LogEvent(ToStdString(env, eventName), ToStdString(env, eventValue));
-}
-
-#define CLEAR_AND_RETURN_FALSE_ON_EXCEPTION \
-  if (env->ExceptionCheck()) {              \
-    env->ExceptionDescribe();               \
-    env->ExceptionClear();                  \
-    return false;                           \
-  }
-
-#define RETURN_ON_EXCEPTION    \
-  if (env->ExceptionCheck()) { \
-    env->ExceptionDescribe();  \
-    return;                    \
-  }
-
-JNIEXPORT void JNICALL Java_org_alohastats_lib_Statistics_setupCPP(JNIEnv* env,
-                                                                   jclass,
-                                                                   jclass httpTransportClass,
-                                                                   jstring serverUrl,
-                                                                   jstring storagePath) {
-  // Initialize statistics engine
-  g_stats.reset(new aloha::Stats(ToStdString(env, serverUrl), ToStdString(env, storagePath)));
-
-  g_httpTransportClass = static_cast<jclass>(env->NewGlobalRef(httpTransportClass));
-  RETURN_ON_EXCEPTION
-  g_httpTransportClass_run = env->GetStaticMethodID(
-      g_httpTransportClass,
-      "run",
-      "(Lorg/alohastats/lib/HttpTransport$Params;)Lorg/alohastats/lib/HttpTransport$Params;");
-  RETURN_ON_EXCEPTION
-  g_httpParamsClass = env->FindClass("org/alohastats/lib/HttpTransport$Params");
-  RETURN_ON_EXCEPTION
-  g_httpParamsClass = static_cast<jclass>(env->NewGlobalRef(g_httpParamsClass));
-  RETURN_ON_EXCEPTION
-  g_httpParamsConstructor = env->GetMethodID(g_httpParamsClass, "<init>", "(Ljava/lang/String;)V");
-  RETURN_ON_EXCEPTION
-}
-
-}  // extern "C"
+// Wrapper over native Android/Java code for HTTP GET/POST.
 
 namespace aloha {
 
@@ -172,15 +75,21 @@ class HTTPClientPlatformWrapper {
   // @returns true only if server answered with HTTP 200 OK
   // @note Implementations should transparently support all needed HTTP redirects
   bool Go() {
+    using bricks::MakePointerScopeGuard;
+    using bricks::java_wrapper::ToStdString;
+
+    auto JAVA = bricks::java_wrapper::JavaWrapper::Singleton();
+
     // Attaching multiple times from the same thread is a no-op, which only gets good env for us.
+    JavaVM* jvm = JAVA.jvm;
     JNIEnv* env;
-    if (JNI_OK != ::GetJVM()->AttachCurrentThread(PLATFORM_SPECIFIC_CAST (& env), nullptr)) {
+    if (JNI_OK != jvm->AttachCurrentThread(PLATFORM_SPECIFIC_CAST (& env), nullptr)) {
       // TODO(AlexZ): throw some critical exception.
       return false;
     }
 
     // TODO(AlexZ): May need to refactor if this method will be agressively used from the same thread.
-    const auto detachThreadOnScopeExit = bricks::MakeScopeGuard([] { ::GetJVM()->DetachCurrentThread(); });
+    const auto detachThreadOnScopeExit = bricks::MakeScopeGuard([&jvm] { jvm->DetachCurrentThread(); });
 
     // Convenience lambda.
     const auto deleteLocalRef = [&env](jobject o) { env->DeleteLocalRef(o); };
@@ -190,11 +99,11 @@ class HTTPClientPlatformWrapper {
     CLEAR_AND_RETURN_FALSE_ON_EXCEPTION
 
     const auto httpParamsObject = MakePointerScopeGuard(
-        env->NewObject(g_httpParamsClass, g_httpParamsConstructor, jniUrl.get()), deleteLocalRef);
+        env->NewObject(JAVA.httpParamsClass, JAVA.httpParamsConstructor, jniUrl.get()), deleteLocalRef);
     CLEAR_AND_RETURN_FALSE_ON_EXCEPTION
 
     // Cache it on the first call.
-    const static jfieldID dataField = env->GetFieldID(g_httpParamsClass, "data", "[B");
+    const static jfieldID dataField = env->GetFieldID(JAVA.httpParamsClass, "data", "[B");
     if (!post_body_.empty()) {
       const auto jniPostData = MakePointerScopeGuard(env->NewByteArray(post_body_.size()), deleteLocalRef);
       CLEAR_AND_RETURN_FALSE_ON_EXCEPTION
@@ -208,7 +117,7 @@ class HTTPClientPlatformWrapper {
     }
 
     const static jfieldID contentTypeField =
-        env->GetFieldID(g_httpParamsClass, "contentType", "Ljava/lang/String;");
+        env->GetFieldID(JAVA.httpParamsClass, "contentType", "Ljava/lang/String;");
     if (!content_type_.empty()) {
       const auto jniContentType = MakePointerScopeGuard(env->NewStringUTF(content_type_.c_str()), deleteLocalRef);
       CLEAR_AND_RETURN_FALSE_ON_EXCEPTION
@@ -219,7 +128,7 @@ class HTTPClientPlatformWrapper {
 
     if (!user_agent_.empty()) {
       const static jfieldID userAgentField =
-          env->GetFieldID(g_httpParamsClass, "userAgent", "Ljava/lang/String;");
+          env->GetFieldID(JAVA.httpParamsClass, "userAgent", "Ljava/lang/String;");
 
       const auto jniUserAgent = MakePointerScopeGuard(env->NewStringUTF(user_agent_.c_str()), deleteLocalRef);
       CLEAR_AND_RETURN_FALSE_ON_EXCEPTION
@@ -230,7 +139,7 @@ class HTTPClientPlatformWrapper {
 
     if (!post_file_.empty()) {
       const static jfieldID inputFilePathField =
-          env->GetFieldID(g_httpParamsClass, "inputFilePath", "Ljava/lang/String;");
+          env->GetFieldID(JAVA.httpParamsClass, "inputFilePath", "Ljava/lang/String;");
 
       const auto jniInputFilePath = MakePointerScopeGuard(env->NewStringUTF(post_file_.c_str()), deleteLocalRef);
       CLEAR_AND_RETURN_FALSE_ON_EXCEPTION
@@ -241,7 +150,7 @@ class HTTPClientPlatformWrapper {
 
     if (!received_file_.empty()) {
       const static jfieldID outputFilePathField =
-          env->GetFieldID(g_httpParamsClass, "outputFilePath", "Ljava/lang/String;");
+          env->GetFieldID(JAVA.httpParamsClass, "outputFilePath", "Ljava/lang/String;");
 
       const auto jniOutputFilePath =
           MakePointerScopeGuard(env->NewStringUTF(received_file_.c_str()), deleteLocalRef);
@@ -255,7 +164,7 @@ class HTTPClientPlatformWrapper {
     // Current Java implementation simply reuses input params instance, so we don't need to
     // DeleteLocalRef(response).
     const jobject response =
-        env->CallStaticObjectMethod(g_httpTransportClass, g_httpTransportClass_run, httpParamsObject.get());
+        env->CallStaticObjectMethod(JAVA.httpTransportClass, JAVA.httpTransportClass_run, httpParamsObject.get());
     if (env->ExceptionCheck()) {
       env->ExceptionDescribe();
       // TODO(AlexZ): think about rethrowing corresponding C++ exceptions.
@@ -263,12 +172,12 @@ class HTTPClientPlatformWrapper {
       return false;
     }
 
-    const static jfieldID httpResponseCodeField = env->GetFieldID(g_httpParamsClass, "httpResponseCode", "I");
+    const static jfieldID httpResponseCodeField = env->GetFieldID(JAVA.httpParamsClass, "httpResponseCode", "I");
     error_code_ = env->GetIntField(response, httpResponseCodeField);
     CLEAR_AND_RETURN_FALSE_ON_EXCEPTION
 
     const static jfieldID receivedUrlField =
-        env->GetFieldID(g_httpParamsClass, "receivedUrl", "Ljava/lang/String;");
+        env->GetFieldID(JAVA.httpParamsClass, "receivedUrl", "Ljava/lang/String;");
     const auto jniReceivedUrl = MakePointerScopeGuard(
         static_cast<jstring>(env->GetObjectField(response, receivedUrlField)), deleteLocalRef);
     CLEAR_AND_RETURN_FALSE_ON_EXCEPTION
@@ -320,6 +229,8 @@ class HTTPClientPlatformWrapper {
 };  // class HTTPClientPlatformWrapper
 
 }  // namespace aloha
+
+// Wrapper to allow using the above code via HTTP(GET(url)) et. al.
 
 namespace bricks {
 namespace net {
@@ -391,6 +302,6 @@ struct ImplWrapper<aloha::HTTPClientPlatformWrapper> {
 }  // namespace net
 }  // namespace bricks
 
-#endif  // defined(BRICKS_JAVA)
+#endif  // defined(BRICKS_JAVA) || defined(BRICKS_ANDROID)
 
 #endif  // BRICKS_NET_API_IMPL_ANDROID_H

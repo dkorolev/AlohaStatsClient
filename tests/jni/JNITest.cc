@@ -22,17 +22,24 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 *******************************************************************************/
 
+#ifdef LINK_JAVA_ON_LOAD_INTO_SOURCE
+// For the sake of this sample Makefile, if the above define is set to tell Bricks
+// it's a single-source-file binary, then make it a single-source-file binary.
+#include "../../src/bricks/net/api/test.cc"
+#endif
+
 #include <iostream>
 
 #include <jni.h>
 
+#include "../../src/cpp/aloha_stats.cc"
+
 extern int main(int, char**);
 
 extern "C" {
-// The purpose of this wrapper function is simple:
-// launch gflags unit tests from another module.
+// The purpose of this wrapper function is simple: launch gflags unit tests from another module.
 JNIEXPORT void JNICALL Java_org_alohastats_lib_JNITest_runTests(JNIEnv*, jclass) {
-  const char* cmd_line[] = {"http_client_test_jni", "--expected_arch", "Android"};
+  const char* cmd_line[] = {"http_client_test_jni", "--expected_arch", "Java"};
   (void)main(3, const_cast<char**>(cmd_line));
 }
 

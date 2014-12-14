@@ -94,19 +94,9 @@ struct HTTPRequestPOSTFromFile {
   }
 };
 
-HTTPRequestGET GET(const std::string& url) {
-  return HTTPRequestGET(url);
-}
-
-HTTPRequestPOST POST(const std::string& url, const std::string& body, const std::string& content_type) {
-  return HTTPRequestPOST(url, body, content_type);
-}
-
-HTTPRequestPOSTFromFile POSTFromFile(const std::string& url,
-                                     const std::string& file_name,
-                                     const std::string& content_type) {
-  return HTTPRequestPOSTFromFile(url, file_name, content_type);
-}
+typedef HTTPRequestGET GET;
+typedef HTTPRequestPOST POST;
+typedef HTTPRequestPOSTFromFile POSTFromFile;
 
 // Structures to define HTTP response.
 // The actual response type is templated and depends on the types of input paramteres.
